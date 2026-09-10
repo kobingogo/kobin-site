@@ -392,3 +392,40 @@ export function materialsFromColors(
 export function getLightPreset(id: LightPresetId): LightPreset {
   return LIGHT_PRESETS.find((p) => p.id === id) ?? LIGHT_PRESETS[0];
 }
+
+/** Public homepage-ready still (Canvas-2D composed; no WebGL required). */
+export const HOMEPAGE_READY_PATH = "/demos/material-spheres/homepage-ready.png";
+
+/** Committed curated texture pack (JSON + PNG swatches). */
+export const TEXTURE_PACK_PATH = "/demos/material-spheres/texture-pack/";
+
+export type TexturePackMaterial = SphereMaterialSpec & {
+  colorMap: string;
+};
+
+export type TexturePackManifest = {
+  name: string;
+  version: number;
+  source: string;
+  lightPresetId?: LightPresetId;
+  note: string;
+  materials: TexturePackMaterial[];
+};
+
+/** Build a downloadable / commit-ready texture-pack manifest from sphere specs. */
+export function buildTexturePackManifest(
+  materials: SphereMaterialSpec[],
+  opts?: { source?: string; lightPresetId?: LightPresetId },
+): TexturePackManifest {
+  return {
+    name: "material-spheres-texture-pack",
+    version: 1,
+    source: opts?.source ?? "live-demo",
+    lightPresetId: opts?.lightPresetId,
+    note: "Local export — no paid API. Solid color-map swatches + PBR params.",
+    materials: materials.map((m) => ({
+      ...m,
+      colorMap: `swatches/${m.id}.png`,
+    })),
+  };
+}

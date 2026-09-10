@@ -10,8 +10,9 @@
     "test:dod": "tsx --test src/lib/dod-gate.test.ts",
     "test": "npm run test:dod && npm run test:materials",
     "test:e2e:dod": "playwright test e2e/dod-gate.spec.ts",
-    "test:e2e": "npm run test:e2e:dod",
-    "test:materials": "tsx --test src/lib/material-spheres.test.ts"
+    "test:e2e": "npm run test:e2e:dod && npm run test:e2e:materials",
+    "test:materials": "tsx --test src/lib/material-spheres.test.ts",
+    "test:e2e:materials": "playwright test e2e/material-spheres.spec.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

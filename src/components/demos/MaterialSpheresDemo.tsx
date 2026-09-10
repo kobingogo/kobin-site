@@ -5,16 +5,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import { MaterialSpheresCanvasDynamic } from "./MaterialSpheresCanvasDynamic";
 import {
+  buildTexturePackManifest,
   CURATED_MATERIALS,
   getLightPreset,
+  HOMEPAGE_READY_PATH,
   LIGHT_PRESETS,
   materialsFromColors,
   SAMPLE_REF_PATH,
   sampleDominantColors,
+  TEXTURE_PACK_PATH,
   type LightPresetId,
   type Rgb,
   type SphereMaterialSpec,
 } from "@/lib/material-spheres";
+import { createStoreZip } from "@/lib/zip-store";
 import { DEMOS } from "@/lib/demos";
 
 const demo = DEMOS.find((d) => d.slug === "material-spheres")!;
@@ -83,6 +87,36 @@ function sampleImageColors(img: HTMLImageElement): Rgb[] {
   ctx.drawImage(img, 0, 0, w, h);
   const { data } = ctx.getImageData(0, 0, w, h);
   return sampleDominantColors(data, w, h, 6);
+}
+
+
+function hexFillCanvas(color: string, size = 64): Uint8Array {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas-2d-unavailable");
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, size, size);
+  const dataUrl = canvas.toDataURL("image/png");
+  const b64 = dataUrl.split(",")[1] ?? "";
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function downloadBlob(filename: string, data: Uint8Array, mime: string) {
+  // Copy into a fresh ArrayBuffer-backed view for BlobPart typing (TS 5 / DOM lib).
+  const bytes = new Uint8Array(data.byteLength);
+  bytes.set(data);
+  const blob = new Blob([bytes], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export function MaterialSpheresDemo() {
@@ -167,11 +201,48 @@ export function MaterialSpheresDemo() {
     void applyFromSrc(url);
   };
 
+  const exportTexturePack = useCallback(() => {
+    try {
+      const manifest = buildTexturePackManifest(activeMaterials, {
+        source: mode === "curated" ? "curated-static-wall" : "procedural-from-ref",
+        lightPresetId: lightId,
+      });
+      const enc = new TextEncoder();
+      const entries: { name: string; data: Uint8Array }[] = [
+        {
+          name: "materials.json",
+          data: enc.encode(JSON.stringify(manifest, null, 2)),
+        },
+        {
+          name: "README.txt",
+          data: enc.encode(
+            "KobinFlow material-spheres 贴图包\n" +
+              "本地导出：materials.json + swatches/*.png（无付费 API）\n" +
+              `正式资产目录：${TEXTURE_PACK_PATH}\n` +
+              `首页预览：${HOMEPAGE_READY_PATH}\n`,
+          ),
+        },
+      ];
+      for (const m of activeMaterials) {
+        entries.push({
+          name: `swatches/${m.id}.png`,
+          data: hexFillCanvas(m.color, 64),
+        });
+      }
+      const zip = createStoreZip(entries);
+      downloadBlob("material-spheres-texture-pack.zip", zip, "application/zip");
+    } catch {
+      setError("贴图包导出失败。可改用仓库内 public/demos/material-spheres/texture-pack/。");
+    }
+  }, [activeMaterials, mode, lightId]);
+
   const failureTip =
     UI_FAILURE_OPTIONS.find((o) => o.id === uiFailure)?.tip ||
     (error ?? "");
 
-  const canvasBlocked = !effectiveWebgl || showEmpty || (showLoadFail && mode !== "curated" && activeMaterials.length === 0);
+  // uiFailure=load must unmount Canvas (do not keep rendering behind overlay)
+  const canvasBlocked =
+    !effectiveWebgl || showEmpty || uiFailure === "load";
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:py-10">
@@ -455,6 +526,40 @@ export function MaterialSpheresDemo() {
                   </span>
                 </button>
               ))}
+            </div>
+          </section>
+
+          {/* Texture pack / homepage assets */}
+          <section className="rounded-2xl border border-white/10 bg-zinc-900/60 p-4">
+            <h2 className="font-mono text-xs text-cyan-300">贴图包 / 首页预览</h2>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+              导出当前球墙参数 + 色板 PNG（zip）。仓库已提交 curated 贴图包与 homepage-ready 预览图。
+            </p>
+            <div className="mt-3 flex flex-col gap-2">
+              <button
+                type="button"
+                data-testid="export-texture-pack"
+                onClick={exportTexturePack}
+                className="min-h-11 rounded-lg bg-cyan-500/15 text-sm text-cyan-100 ring-1 ring-cyan-400/40 hover:bg-cyan-500/25"
+              >
+                导出贴图包
+              </button>
+              <a
+                href={`${TEXTURE_PACK_PATH}materials.json`}
+                data-testid="texture-pack-link"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white/5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white/10"
+              >
+                打开仓库贴图包目录
+              </a>
+              <a
+                href={HOMEPAGE_READY_PATH}
+                data-testid="homepage-ready-link"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white/5 text-sm text-zinc-200 ring-1 ring-white/10 hover:bg-white/10"
+              >
+                查看 homepage-ready 预览
+              </a>
             </div>
           </section>
         </aside>

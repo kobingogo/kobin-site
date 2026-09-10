@@ -56,7 +56,13 @@ src/
     dod-gate.test.ts           # node --test 脚本断言
     material-spheres.ts        # 采样 / PBR 变体 / 灯光预设 / curated
     material-spheres.test.ts
-  public/demos/material-spheres/sample-ref.png
+  public/demos/material-spheres/
+    sample-ref.png
+    homepage-ready.png
+    texture-pack/          # materials.json + swatches/*.png
+  e2e/
+    dod-gate.spec.ts
+    material-spheres.spec.ts
 ```
 
 ## 实现顺序（填实时）
@@ -122,8 +128,19 @@ npm run test:e2e:dod
 - 1 参考图（上传或捆绑样例）→ Canvas 采样主色 → ≥4 程序化 PBR 材质球（metalness / roughness / 色相变体）
 - 灯光切换：Studio / Rim / Warm（key / fill / rim / env intensity），拉开材质差异
 - 图糊 / 加载失败 → **精选手调静态墙**（Chrome / Gold / Ceramic / Rubber…）仍可验收
-- 失败态：加载失败 / 空状态 / 无 WebGL（及 prefers-reduced-motion）可读，移动端无白屏
+- 失败态：加载失败 / 空状态 / 无 WebGL（及 prefers-reduced-motion）可读，移动端无白屏；**`uiFailure=load` 时卸载 Canvas**（仅 fallback overlay）
+- Growth：仓库贴图包 + 首页预览；页内「导出贴图包」下载当前球墙 JSON + 色板 PNG zip
 - **TODO（付费）**：图像 / 材质生成 API（仅文档，不接 key）
+
+#### 正式资产（Growth #3）
+
+| 资产 | 路径 |
+|------|------|
+| 首页预览图 | [`public/demos/material-spheres/homepage-ready.png`](public/demos/material-spheres/homepage-ready.png) |
+| 贴图包（JSON + swatches） | [`public/demos/material-spheres/texture-pack/`](public/demos/material-spheres/texture-pack/) |
+| 样例参考图 | [`public/demos/material-spheres/sample-ref.png`](public/demos/material-spheres/sample-ref.png) |
+
+再生：`node scripts/generate-material-assets.mjs`
 
 #### 怎么演示
 
@@ -131,7 +148,8 @@ npm run test:e2e:dod
 2. 默认加载捆绑样例图并生成 ≥4 球；或点「上传参考图」
 3. 切换 **Studio / Rim / Warm** 观察金属 vs 非金属差异
 4. 点「精选手调静态墙」验收 curated 兜底路径
-5. 「失败态演示」切 加载失败 / 空状态 / 无 WebGL → 横幅 + 静态清单可读
+5. 「失败态演示」切 **加载失败** → 横幅 + fallback，**Canvas 不出现**；空状态 / 无 WebGL 同理可读
+6. 点「导出贴图包」下载 zip；或打开仓库贴图包 / homepage-ready 链接
 
 #### 脚本断言（纯函数）
 
@@ -140,6 +158,15 @@ npm run test:materials
 # 或一并
 npm test
 ```
+
+#### Playwright smoke（可选）
+
+```bash
+npx playwright install chromium
+npm run build && npm run test:e2e:materials
+```
+
+覆盖：灯光切换、精选手调、`uiFailure=load` 隐藏 Canvas。
 
 ### product-turntable
 

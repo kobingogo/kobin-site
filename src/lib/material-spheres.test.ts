@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   averageColorFromRgba,
+  buildTexturePackManifest,
   CURATED_MATERIALS,
   materialsFromColors,
   rgbToHex,
   sampleDominantColors,
   type Rgb,
 } from "./material-spheres";
+import { createStoreZip } from "./zip-store";
 
 function solidRgba(
   w: number,
@@ -61,7 +63,6 @@ describe("material-spheres helpers", () => {
   it("sampleDominantColors returns requested distinct-ish palette", () => {
     const colors = sampleDominantColors(twoToneRgba(32, 32), 32, 32, 4);
     assert.equal(colors.length, 4);
-    // At least two should differ meaningfully (red vs cyan halves)
     const spread = Math.max(
       ...colors.flatMap((a, i) =>
         colors.slice(i + 1).map((b) => {
@@ -97,5 +98,34 @@ describe("material-spheres helpers", () => {
   it("curated wall has ≥4 hand-tuned materials", () => {
     assert.ok(CURATED_MATERIALS.length >= 4);
     assert.ok(CURATED_MATERIALS.every((m) => m.color.startsWith("#")));
+  });
+
+  it("buildTexturePackManifest attaches colorMap paths", () => {
+    const pack = buildTexturePackManifest(CURATED_MATERIALS.slice(0, 4), {
+      source: "test",
+      lightPresetId: "studio",
+    });
+    assert.equal(pack.version, 1);
+    assert.equal(pack.materials.length, 4);
+    assert.ok(pack.materials.every((m) => m.colorMap.startsWith("swatches/")));
+    assert.equal(pack.lightPresetId, "studio");
+  });
+});
+
+describe("zip-store", () => {
+  it("createStoreZip embeds entry names and payloads", () => {
+    const enc = new TextEncoder();
+    const zip = createStoreZip([
+      { name: "materials.json", data: enc.encode('{"ok":true}') },
+      { name: "swatches/a.png", data: new Uint8Array([1, 2, 3, 4]) },
+    ]);
+    assert.ok(zip.length > 40);
+    assert.equal(zip[0], 0x50);
+    assert.equal(zip[1], 0x4b);
+    assert.equal(zip[2], 0x03);
+    assert.equal(zip[3], 0x04);
+    const asText = new TextDecoder().decode(zip);
+    assert.ok(asText.includes("materials.json"));
+    assert.ok(asText.includes("swatches/a.png"));
   });
 });

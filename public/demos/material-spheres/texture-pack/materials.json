@@ -1,0 +1,74 @@
+{
+  "name": "material-spheres-curated-texture-pack",
+  "version": 1,
+  "source": "curated hand-tuned static wall",
+  "note": "Local export — no paid API. Color maps are solid swatches + PBR params JSON.",
+  "materials": [
+    {
+      "id": "curated-chrome",
+      "label": "Chrome",
+      "color": "#c8d0dc",
+      "metalness": 1,
+      "roughness": 0.08,
+      "colorMap": "swatches/curated-chrome.png"
+    },
+    {
+      "id": "curated-brushed",
+      "label": "Brushed Al",
+      "color": "#9aa3b2",
+      "metalness": 0.92,
+      "roughness": 0.38,
+      "colorMap": "swatches/curated-brushed.png"
+    },
+    {
+      "id": "curated-gold",
+      "label": "Gold",
+      "color": "#d4a017",
+      "metalness": 1,
+      "roughness": 0.22,
+      "colorMap": "swatches/curated-gold.png"
+    },
+    {
+      "id": "curated-copper",
+      "label": "Copper",
+      "color": "#b87333",
+      "metalness": 0.95,
+      "roughness": 0.28,
+      "colorMap": "swatches/curated-copper.png"
+    },
+    {
+      "id": "curated-ceramic",
+      "label": "Ceramic",
+      "color": "#f4f0ea",
+      "metalness": 0.02,
+      "roughness": 0.55,
+      "colorMap": "swatches/curated-ceramic.png"
+    },
+    {
+      "id": "curated-rubber",
+      "label": "Rubber",
+      "color": "#1f2937",
+      "metalness": 0,
+      "roughness": 0.92,
+      "colorMap": "swatches/curated-rubber.png"
+    },
+    {
+      "id": "curated-plastic",
+      "label": "Cyan Plastic",
+      "color": "#22d3ee",
+      "metalness": 0.05,
+      "roughness": 0.35,
+      "colorMap": "swatches/curated-plastic.png"
+    },
+    {
+      "id": "curated-emissive",
+      "label": "Glow Glass",
+      "color": "#0e7490",
+      "metalness": 0.15,
+      "roughness": 0.12,
+      "emissive": "#22d3ee",
+      "emissiveIntensity": 0.45,
+      "colorMap": "swatches/curated-emissive.png"
+    }
+  ]
+}

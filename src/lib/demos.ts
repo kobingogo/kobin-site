@@ -40,7 +40,8 @@ export const DEMOS: DemoMeta[] = [
     acceptance: [
       "1 张参考图 → ≥4 颗材质球（Canvas 采样主色 + 程序化 metalness/roughness 变体）+ 灯光切换（Studio / Rim / Warm）",
       "图糊 / 生成失败 → 降级为 curated 精选手调静态球墙亦可验收",
-      "失败态：加载失败 / 空状态 / 无 WebGL 可读，移动端无白屏",
+      "失败态：加载失败时卸载 Canvas；空状态 / 无 WebGL 可读，移动端无白屏",
+      "贴图包可导出；仓库含 homepage-ready 预览与 texture-pack",
       "共享：移动端无白屏；后续 ≤20s reel",
     ],
     paidApiNotes: ["图像 / 材质生成 API 为付费 TODO（README 标注，本脚手架不接 key）"],
