@@ -4,6 +4,7 @@
   --background: #020617;
   --foreground: #e4e4e7;
   --accent: #22d3ee;
+  --panel: rgba(2, 6, 23, 0.82);
 }
 
 @theme inline {
@@ -27,8 +28,11 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, "PingFang SC", "Noto Sans SC",
+    sans-serif;
   min-height: 100%;
+  letter-spacing: -0.011em;
+  text-rendering: optimizeLegibility;
 }
 
 /* Avoid pure white flashes on mobile degrade */
@@ -40,4 +44,10 @@ body {
 ::selection {
   background: rgba(34, 211, 238, 0.35);
   color: #fff;
+}
+
+/* Readable scroll panels over fixed Canvas */
+.home-panel {
+  background: var(--panel);
+  backdrop-filter: blur(10px);
 }
