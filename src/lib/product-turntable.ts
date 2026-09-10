@@ -30,6 +30,12 @@ export const PROXY_FALLBACK_TEXTURE =
 /** Max reel length (seconds) for in-page MediaRecorder export */
 export const REEL_SECONDS = 15;
 
+/** Formal portfolio reel committed under public/ (≤20s) */
+export const REEL_ASSET_PATH = "/demos/product-turntable/reel.webm";
+
+/** Time-to-interactive budget: mount → controls/canvas ready (ms) */
+export const TTI_BUDGET_MS = 3000;
+
 export const PRODUCT_SAMPLES: ProductSample[] = [
   {
     id: "bottle",
@@ -127,6 +133,7 @@ export function formatTti(ms: number | null): string {
 
 export function buildReelGuidance(): string[] {
   return [
+    `正式作品集 reel：${REEL_ASSET_PATH}（本地生成 ≤20s 转盘短片，无付费 API）。`,
     `页内「录制约 ${REEL_SECONDS}s」：捕获 Canvas 画面为 WebM（需浏览器支持 MediaRecorder）。`,
     "或用系统录屏：打开转盘 → 开自动旋转 → 录 10–15s 拖拽环视 → 导出为 reel。",
     "移动端：双指勿缩放页面；单指拖拽环视；触控目标 ≥44px。",

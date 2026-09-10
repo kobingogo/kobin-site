@@ -7,7 +7,9 @@ import { ProductTurntableCanvasDynamic } from "./ProductTurntableCanvasDynamic";
 import {
   PRODUCT_SAMPLES,
   PROXY_FALLBACK_TEXTURE,
+  REEL_ASSET_PATH,
   REEL_SECONDS,
+  TTI_BUDGET_MS,
   UI_FAILURE_OPTIONS,
   buildReelGuidance,
   formatTti,
@@ -239,8 +241,19 @@ export function ProductTurntableDemo() {
           : !webglOk
             ? " 当前无 WebGL：展示静态降级。"
             : null}{" "}
-        <span data-testid="turntable-tti" className="font-mono text-cyan-300/90">
-          TTI 提示：{formatTti(ttiMs)}
+        <span
+          data-testid="turntable-tti"
+          data-tti-ms={ttiMs == null ? "" : String(Math.round(ttiMs))}
+          data-tti-budget-ms={String(TTI_BUDGET_MS)}
+          className="font-mono text-cyan-300/90"
+        >
+          TTI（挂载→控件/画布可交互）：{formatTti(ttiMs)}
+          {ttiMs != null ? (
+            <span className="ml-1 text-zinc-500">
+              / 预算 {'<'}{TTI_BUDGET_MS / 1000}s
+              {ttiMs < TTI_BUDGET_MS ? " · 达标" : " · 超预算"}
+            </span>
+          ) : null}
         </span>
       </p>
 
@@ -458,8 +471,27 @@ export function ProductTurntableDemo() {
               约 {REEL_SECONDS}s 录制 / 导出
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-              页内可尝试 Canvas → WebM；不支持时按下方指引用系统录屏。
+              页内可尝试 Canvas → WebM；不支持时按下方指引用系统录屏。正式作品集 reel：
+              <a
+                href={REEL_ASSET_PATH}
+                data-testid="reel-asset-link"
+                className="ml-1 text-cyan-400 underline-offset-2 hover:underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                public/demos/product-turntable/reel.webm（12s）
+              </a>
             </p>
+            <video
+              data-testid="reel-asset-video"
+              className="mt-2 aspect-square w-full max-h-40 rounded-lg object-cover ring-1 ring-white/10"
+              src={REEL_ASSET_PATH}
+              muted
+              playsInline
+              loop
+              controls
+              preload="metadata"
+            />
             <div className="mt-3 flex flex-col gap-2">
               {!recording ? (
                 <button
@@ -512,7 +544,16 @@ export function ProductTurntableDemo() {
             当前样例：{sample.label}（{sample.labelEn}）· 模式：
             {renderMode === "proxy" ? "代理兜底" : "样例"}
           </li>
-          <li>TTI 提示：{formatTti(ttiMs)}</li>
+          <li>
+            实测 TTI：{formatTti(ttiMs)}（预算 {'<'}{TTI_BUDGET_MS / 1000}s；CI：
+            <span className="font-mono">npm run test:e2e:turntable</span>）
+          </li>
+          <li>
+            正式 reel：
+            <a href={REEL_ASSET_PATH} className="text-cyan-400 hover:underline">
+              {REEL_ASSET_PATH}
+            </a>
+          </li>
         </ul>
       </section>
 

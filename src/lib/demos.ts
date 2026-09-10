@@ -60,9 +60,9 @@ export const DEMOS: DemoMeta[] = [
       "移动端可拖（触控 OrbitControls）",
       "默认无付费 API；默认代理模 + 产品贴图路径",
       "认不出原物 / 白屏风险 → 可切代理模 + 贴图兜底（不硬推坏 recon）",
-      "约 15s 录制导出（Canvas MediaRecorder）或明确系统录屏指引",
+      "约 15s 录制导出（Canvas MediaRecorder）或明确系统录屏指引；正式 ≤20s reel.webm 已入库",
       "失败态：加载失败 / 空状态 / 无 WebGL 可读，移动端无白屏",
-      "TTI 提示可读；共享：后续 ≤20s reel",
+      "实测 TTI（挂载→控件/画布可交互）<3s，页内展示；CI：npm run test:e2e:turntable",
     ],
     paidApiNotes: [
       "图生 3D / 重建服务为付费 TODO（README 标注，本脚手架不接 key；默认代理模）",

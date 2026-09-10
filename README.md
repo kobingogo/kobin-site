@@ -67,6 +67,7 @@ src/
   public/demos/product-turntable/
     bottle.png / speaker.png / mug.png
     proxy-fallback.png
+    reel.webm                 # ≤20s formal portfolio reel
   e2e/
     dod-gate.spec.ts
     material-spheres.spec.ts
@@ -178,13 +179,14 @@ npm run build && npm run test:e2e:materials
 
 ### product-turntable · 可验收
 
-- **3 张产品图**（bottle / speaker / mug）驱动转盘贴图；桌面 **drag orbit** 可拖转
-- **移动端可拖**：OrbitControls 单指旋转、双指缩放距离；深色底防白屏；触控 ≥44px
+- **3 张产品图**（bottle / speaker / mug）驱动转盘贴图；桌面 **drag orbit** 可拖转（Playwright 鼠标拖拽断言方位角变化）
+- **移动端可拖**：OrbitControls 单指旋转、双指缩放距离；深色底防白屏；触控 ≥44px（Playwright pointer/touch 拖拽断言）
 - **默认无付费**：不接图生 3D key；默认 **代理模 + 产品贴图**
 - **认不出原物 / 白屏风险** → 页内「代理模 + 贴图兜底」或「模拟认不出」强制盒体 + `proxy-fallback.png`（不硬推坏 recon）
 - **约 15s 录制/导出**：Canvas `MediaRecorder` → WebM；不支持时页内有明确系统录屏指引
+- **正式 ≤20s reel**：[`public/demos/product-turntable/reel.webm`](public/demos/product-turntable/reel.webm)（12s，本地 ffmpeg 从产品贴图生成）
 - 失败态：加载失败 / 空状态 / 无 WebGL（及 prefers-reduced-motion）可读；`uiFailure=load` 时卸载 Canvas
-- Growth：TTI 提示（挂载→可交互 ms）
+- **TTI &lt;3s**：页内展示实测「挂载 → 控件/画布可交互」毫秒数（`data-tti-ms`）；**禁止假数**；CI 用 Playwright 断言 &lt;3000ms
 
 #### 正式资产
 
@@ -194,15 +196,17 @@ npm run build && npm run test:e2e:materials
 | 音箱贴图 | [`public/demos/product-turntable/speaker.png`](public/demos/product-turntable/speaker.png) |
 | 马克杯贴图 | [`public/demos/product-turntable/mug.png`](public/demos/product-turntable/mug.png) |
 | 代理兜底贴图 | [`public/demos/product-turntable/proxy-fallback.png`](public/demos/product-turntable/proxy-fallback.png) |
+| **正式 reel（≤20s）** | [`public/demos/product-turntable/reel.webm`](public/demos/product-turntable/reel.webm) |
 
-再生：`node scripts/generate-product-turntable-assets.mjs`
+再生贴图：`node scripts/generate-product-turntable-assets.mjs`  
+再生 reel：`node scripts/generate-product-turntable-reel.mjs`
 
 #### 怎么演示
 
 1. 打开 <http://localhost:3000/demos/product-turntable>
 2. 切换三个产品样例；在画布上拖拽（手机单指）环视；可关/开「自动旋转」
 3. 点「代理模 + 贴图兜底」或「模拟认不出 / 白屏风险」→ 盒体 + fallback 贴图
-4. 点「录制约 15s 并导出」试 WebM；或按页内「约 15s reel 指引」系统录屏
+4. 查看页顶 **TTI**（实测 ms，预算 &lt;3s）；页内预览正式 `reel.webm`；或点「录制约 15s 并导出」
 5. 「失败态演示」切 **加载失败** → 横幅 + fallback，**Canvas 不出现**
 
 #### 脚本断言
@@ -213,14 +217,15 @@ npm run test:turntable
 npm test
 ```
 
-#### Playwright smoke（可选）
+#### Playwright / CI 证明（TTI + drag + touch）
 
 ```bash
 npx playwright install chromium
 npm run build && npm run test:e2e:turntable
 ```
 
-覆盖：样例切换、代理兜底、坏 recon 模拟、`uiFailure=load` 隐藏 Canvas、reel 指引可见。
+覆盖：样例切换、代理兜底、坏 recon 模拟、`uiFailure=load` 隐藏 Canvas、**正式 reel 入库**、**实测 TTI &lt;3000ms**、**桌面 mouse drag 旋转**、**touch/pointer drag 旋转**。  
+**CI 证明命令即：`npm run test:e2e:turntable`。**
 
 ### robot-arm
 
@@ -229,7 +234,7 @@ npm run build && npm run test:e2e:turntable
 
 ### Shared
 
-- 后续 ≤20s reel  
+- product-turntable 正式 ≤20s reel 已入库（`reel.webm`）；其余 demo 后续可补  
 - **移动端无白屏**（layout 深色底 + WebGL / reduced-motion 降级）
 
 ## Paid API TODOs（仅文档，不接 key）

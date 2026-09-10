@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import {
   PRODUCT_SAMPLES,
   PROXY_FALLBACK_TEXTURE,
+  REEL_ASSET_PATH,
   REEL_SECONDS,
+  TTI_BUDGET_MS,
   buildReelGuidance,
   formatTti,
   getProductSample,
@@ -57,8 +59,11 @@ describe("product-turntable helpers", () => {
     assert.equal(formatTti(420), "420 ms");
     assert.equal(formatTti(1500), "1.50 s");
     assert.equal(REEL_SECONDS, 15);
+    assert.equal(TTI_BUDGET_MS, 3000);
+    assert.equal(REEL_ASSET_PATH, "/demos/product-turntable/reel.webm");
     const tips = buildReelGuidance();
     assert.ok(tips.length >= 3);
     assert.ok(tips.some((t) => t.includes("15")));
+    assert.ok(tips.some((t) => t.includes("reel.webm")));
   });
 });

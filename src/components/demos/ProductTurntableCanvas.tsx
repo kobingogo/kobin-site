@@ -3,7 +3,6 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ContactShadows,
-  Environment,
   OrbitControls,
   RoundedBox,
   useTexture,
@@ -14,6 +13,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   type MutableRefObject,
   type ReactNode,
 } from "react";
@@ -36,8 +36,9 @@ type Props = {
   onTextureError?: () => void;
   /** Ref to the WebGL canvas element for MediaRecorder */
   canvasElRef?: MutableRefObject<HTMLCanvasElement | null>;
+  /** Azimuth (radians) for Playwright drag evidence */
+  onAzimuthChange?: (azimuth: number) => void;
 };
-
 
 class TextureErrorBoundary extends Component<
   { children: ReactNode; onError?: () => void },
@@ -60,12 +61,15 @@ function ProductMesh({
   sample,
   mode,
   autoSpin,
+  onMeshReady,
 }: {
   sample: ProductSample;
   mode: RenderMode;
   autoSpin: boolean;
+  onMeshReady?: () => void;
 }) {
   const group = useRef<Group>(null);
+  const readyFired = useRef(false);
   const texPath = resolveTexturePath(sample, mode);
   const shape = resolveShape(sample, mode);
   const size = resolveMeshSize(sample, mode);
@@ -81,6 +85,13 @@ function ProductMesh({
     if (!autoSpin || !group.current) return;
     group.current.rotation.y += dt * 0.55;
   });
+
+  useEffect(() => {
+    if (readyFired.current) return;
+    readyFired.current = true;
+    const id = requestAnimationFrame(() => onMeshReady?.());
+    return () => cancelAnimationFrame(id);
+  }, [map, onMeshReady]);
 
   const mat = (
     <meshStandardMaterial
@@ -141,15 +152,26 @@ function Stand() {
   );
 }
 
-function InteractiveSignal({ onInteractive }: { onInteractive?: () => void }) {
+/**
+ * TTI = mount → controls + textured mesh ready (canvas interactive).
+ * Fires once when both OrbitControls and product texture mesh are ready.
+ */
+function InteractiveGate({
+  meshReady,
+  controlsReady,
+  onInteractive,
+}: {
+  meshReady: boolean;
+  controlsReady: boolean;
+  onInteractive?: () => void;
+}) {
   const fired = useRef(false);
-  const { gl } = useThree();
   useEffect(() => {
-    if (fired.current) return;
+    if (fired.current || !meshReady || !controlsReady) return;
     fired.current = true;
     const id = requestAnimationFrame(() => onInteractive?.());
     return () => cancelAnimationFrame(id);
-  }, [gl, onInteractive]);
+  }, [meshReady, controlsReady, onInteractive]);
   return null;
 }
 
@@ -169,24 +191,62 @@ function CanvasCapture({
   return null;
 }
 
+function AzimuthReporter({
+  controlsRef,
+  onAzimuthChange,
+}: {
+  controlsRef: MutableRefObject<OrbitControlsImpl | null>;
+  onAzimuthChange?: (azimuth: number) => void;
+}) {
+  const last = useRef<number | null>(null);
+  useFrame(() => {
+    const c = controlsRef.current;
+    if (!c || !onAzimuthChange) return;
+    const a = c.getAzimuthalAngle();
+    if (last.current == null || Math.abs(a - last.current) > 0.0005) {
+      last.current = a;
+      onAzimuthChange(a);
+    }
+  });
+  return null;
+}
+
 function Scene({
   sample,
   mode,
   autoSpin,
-  onInteractive,
   onTextureError,
   canvasElRef,
-}: Omit<Props, "className">) {
+  onAzimuthChange,
+  onControlsReady,
+  onMeshReady,
+}: Omit<Props, "className" | "onInteractive"> & {
+  onControlsReady?: () => void;
+  onMeshReady?: () => void;
+}) {
   const controls = useRef<OrbitControlsImpl>(null);
+  const controlsSignaled = useRef(false);
+
+  useEffect(() => {
+    if (controlsSignaled.current) return;
+    // OrbitControls mounts synchronously with the scene; signal next frame.
+    const id = requestAnimationFrame(() => {
+      if (controls.current) {
+        controlsSignaled.current = true;
+        onControlsReady?.();
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [onControlsReady]);
 
   return (
     <>
       <color attach="background" args={["#020617"]} />
-      <ambientLight intensity={0.28} />
+      <ambientLight intensity={0.42} />
       <directionalLight
         castShadow
         position={[3.2, 4.5, 2.8]}
-        intensity={1.25}
+        intensity={1.45}
         color="#ffffff"
         shadow-mapSize={[1024, 1024]}
       />
@@ -200,10 +260,18 @@ function Scene({
         intensity={0.55}
         color="#e0e7ff"
       />
+      {/* Local lights only — no CDN Environment HDR (keeps TTI deterministic & <3s) */}
       <Suspense fallback={null}>
-        <Environment preset="city" environmentIntensity={0.7} />
-        <TextureErrorBoundary onError={onTextureError} key={`${sample.id}-${mode}`}>
-          <ProductMesh sample={sample} mode={mode} autoSpin={autoSpin} />
+        <TextureErrorBoundary
+          onError={onTextureError}
+          key={`${sample.id}-${mode}`}
+        >
+          <ProductMesh
+            sample={sample}
+            mode={mode}
+            autoSpin={autoSpin}
+            onMeshReady={onMeshReady}
+          />
         </TextureErrorBoundary>
       </Suspense>
       <Stand />
@@ -224,6 +292,7 @@ function Scene({
       </mesh>
       <OrbitControls
         ref={controls}
+        makeDefault
         enablePan={false}
         enableZoom
         minDistance={2.4}
@@ -234,7 +303,10 @@ function Scene({
         dampingFactor={0.08}
         rotateSpeed={0.9}
       />
-      <InteractiveSignal onInteractive={onInteractive} />
+      <AzimuthReporter
+        controlsRef={controls}
+        onAzimuthChange={onAzimuthChange}
+      />
       <CanvasCapture canvasElRef={canvasElRef} />
     </>
   );
@@ -248,8 +320,23 @@ export function ProductTurntableCanvas({
   onInteractive,
   onTextureError,
   canvasElRef,
+  onAzimuthChange,
 }: Props) {
   const sceneKey = `${sample.id}-${mode}-${sample.texturePath}`;
+  const [meshReady, setMeshReady] = useState(false);
+  const [controlsReady, setControlsReady] = useState(false);
+  const [azimuth, setAzimuth] = useState(0);
+
+  // Reset readiness when product/mode remounts
+  useEffect(() => {
+    setMeshReady(false);
+    setControlsReady(false);
+  }, [sceneKey]);
+
+  const handleAzimuth = (a: number) => {
+    setAzimuth(a);
+    onAzimuthChange?.(a);
+  };
 
   return (
     <div
@@ -258,11 +345,18 @@ export function ProductTurntableCanvas({
         "relative h-[min(62vh,520px)] min-h-[280px] w-full touch-none overflow-hidden rounded-2xl border border-cyan-500/20 bg-slate-950"
       }
       data-testid="product-turntable-canvas"
+      data-azimuth={azimuth.toFixed(4)}
+      data-interactive={meshReady && controlsReady ? "true" : "false"}
     >
+      <InteractiveGate
+        meshReady={meshReady}
+        controlsReady={controlsReady}
+        onInteractive={onInteractive}
+      />
       <Canvas
         key={sceneKey}
         shadows
-        dpr={[1, 1.75]}
+        dpr={[1, 1.5]}
         gl={{
           antialias: true,
           alpha: false,
@@ -278,9 +372,11 @@ export function ProductTurntableCanvas({
           sample={sample}
           mode={mode}
           autoSpin={autoSpin}
-          onInteractive={onInteractive}
           onTextureError={onTextureError}
           canvasElRef={canvasElRef}
+          onAzimuthChange={handleAzimuth}
+          onControlsReady={() => setControlsReady(true)}
+          onMeshReady={() => setMeshReady(true)}
         />
       </Canvas>
     </div>
