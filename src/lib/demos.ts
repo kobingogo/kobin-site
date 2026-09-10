@@ -4,7 +4,7 @@ export type DemoMeta = {
   title: string;
   titleEn: string;
   pitch: string;
-  status: "脚手架";
+  status: "脚手架" | "可验收";
   order: number;
   acceptance: string[];
   paidApiNotes: string[];
@@ -18,7 +18,7 @@ export const DEMOS: DemoMeta[] = [
     titleEn: "Agent DoD Gate",
     pitch:
       "拦住「看起来做完了」的假完成：缺证据、无标准就绿、边界未跑、清单对不上 → 一律不通过。",
-    status: "脚手架",
+    status: "可验收",
     order: 1,
     acceptance: [
       "无闸门时：假完成可复现（对照基线）",
@@ -83,7 +83,7 @@ export const NAV_LINKS = [
   ...DEMOS.map((d) => ({ href: d.href, label: d.titleEn })),
 ];
 
-/** DoD 假完成口径 — 缺证据就不绿 */
+/** DoD 假完成口径 — 缺证据就不绿（展示用；断言逻辑见 dod-gate.ts） */
 export const DOD_FALSE_COMPLETE_CRITERIA = [
   {
     id: "missing-evidence",
@@ -107,11 +107,5 @@ export const DOD_FALSE_COMPLETE_CRITERIA = [
   },
 ] as const;
 
-/** 预留 deliverable ID（实现阶段填实） */
-export const DOD_DELIVERABLE_IDS = [
-  "DOD-GATE-01-repro-baseline",
-  "DOD-GATE-02-assert-script",
-  "DOD-GATE-03-false-complete-zero",
-  "DOD-GATE-04-block-rate-100",
-  "DOD-GATE-05-id-registry",
-] as const;
+/** 稳定 deliverable ID — 与 src/lib/dod-gate.ts 对齐 */
+export { DOD_DELIVERABLE_IDS } from "./dod-gate";

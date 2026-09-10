@@ -2,7 +2,7 @@
 
 jin kobin 个人站脚手架：**Next.js 15 App Router + TypeScript + Tailwind CSS + R3F/drei + framer-motion**。
 
-深色技术审美。无付费 API、无密钥。真实 GLB 角色 / Bloom / DOF / 线上 AI 集成均 **out of scope**（本仓库仅脚手架）。
+深色技术审美。无付费 API、无密钥。**Agent 假完成 DoD 闸门**已可验收交互；其余三个 demo 仍为 stub。真实 GLB 角色 / Bloom / DOF / 线上 AI 集成均 **out of scope**。
 
 ## 快速运行
 
@@ -34,7 +34,7 @@ src/
     layout.tsx                 # Header + dark base；failure/mobile 说明注释
     page.tsx                   # Home
     demos/
-      agent-dod-gate/          # DoD 闸门（含 deliverable ID + 假完成口径）
+      agent-dod-gate/          # DoD 闸门（真实交互 · 可验收）
       material-spheres/
       product-turntable/
       robot-arm/
@@ -45,8 +45,13 @@ src/
       HeroCanvas.tsx           # 全屏固定 R3F Canvas
       HeroScene.tsx            # 粒子/低多边形；camera scrub 注释 bake 接入点
       HomeExperience.tsx       # 滚动层 About / Works / Contact + 降级
-    demos/DemoStub.tsx         # 统一 stub：标题/pitch/验收/付费 TODO
-  lib/demos.ts                 # 路由元数据、验收口径、DoD ID
+    demos/
+      DemoStub.tsx             # 统一 stub：标题/pitch/验收/付费 TODO
+      AgentDodGateDemo.tsx     # DoD 闸门交互（无/有闸门）
+  lib/
+    demos.ts                   # 路由元数据、验收口径
+    dod-gate.ts                # assertDod 纯函数 + 假完成用例
+    dod-gate.test.ts           # node --test 脚本断言
 ```
 
 ## 实现顺序（填实时）
@@ -62,14 +67,32 @@ src/
 
 ## Hard acceptance
 
-### DoD（agent-dod-gate）
+### DoD（agent-dod-gate）· 可验收
 
 - 无闸门：假完成可复现  
 - 有闸门：假完成可用脚本断言拦截  
 - 假完成 → 通过率 = 0  
 - block rate = 100%  
-- 可枚举 deliverable IDs（见页面预留列表）  
+- 可枚举 deliverable IDs（见页面 / `DOD_DELIVERABLE_IDS`）  
 - 假完成口径：缺证据 / 无标准就绿 / 边界未跑 / 清单对不上  
+- 失败原因 UI 可见；移动端单列可读、无白屏；无付费 API  
+
+#### 怎么演示
+
+1. 打开 <http://localhost:3000/demos/agent-dod-gate>
+2. **无闸门**：选预设「假完成 · 缺证据」（或四连击）→ 清单看起来「标绿」但证据为空 → 点「标记完成」→ **放行**（假完成可复现）
+3. **有闸门**：同一预设 → 点「标记完成」→ **拦截**，展示 `missing-evidence` 等 WHY；点「跑假完成套件断言」可见通过=0 / blockRate=100%
+4. 切到「合规交付」+ 有闸门 → 可真正标记完成；「导出 Eval JSON」拿到 deliverable IDs + pass/fail
+
+#### 脚本断言（纯函数，无浏览器）
+
+```bash
+npm run test:dod
+# 等价
+npx tsx --test src/lib/dod-gate.test.ts
+```
+
+核心 API：`assertDod(state)`、`assertFakeCompleteSuite()`（见 `src/lib/dod-gate.ts`）。
 
 ### material-spheres
 
