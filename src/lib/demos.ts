@@ -73,16 +73,21 @@ export const DEMOS: DemoMeta[] = [
     href: "/demos/robot-arm",
     title: "自然语言机械臂仿真",
     titleEn: "Robot Arm NL Sim",
-    pitch: "中文指令驱动机械臂；失败可读；桌面 ≥30fps，否则脚本演示 + LLM TODO。",
-    status: "脚手架",
+    pitch:
+      "中文指令规则映射驱动 3–4 DOF 机械臂抓取/放置；失败可读；桌面 ≥30fps；脚本演示罐头序列；默认无付费 LLM。",
+    status: "可验收",
     order: 4,
     acceptance: [
-      "10 条中文指令 ≥7 条成功",
-      "失败状态可读（原因 + 下一步）",
-      "桌面 ≥30fps；否则脚本化 demo + LLM API TODO",
+      "10 条固定中文指令规则映射；脚本/评分路径抓取·放置成功 ≥7",
+      "失败状态可读（原因 + 下一步）；未知指令明确提示",
+      "桌面 ≥30fps（页内 FPS）；不稳定或 <30 时走脚本演示 + LLM API 付费 TODO（不接 key）",
+      "失败态：加载失败 / 空状态 / 无 WebGL 可读，移动端无白屏（Canvas 卸载）",
+      "单元测试覆盖 command→action；e2e smoke；npm run build 通过",
       "共享：移动端无白屏；后续 ≤20s reel",
     ],
-    paidApiNotes: ["自然语言理解 / LLM API 为付费 TODO"],
+    paidApiNotes: [
+      "自然语言理解 / 开放域 LLM API 为付费 TODO（README 标注，本脚手架不接 key；默认规则映射）",
+    ],
   },
 ];
 

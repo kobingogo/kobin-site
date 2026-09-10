@@ -2,7 +2,7 @@
 
 jin kobin 个人站脚手架：**Next.js 15 App Router + TypeScript + Tailwind CSS + R3F/drei + framer-motion**。
 
-深色技术审美。无付费 API、无密钥。**Agent 假完成 DoD 闸门**、**图生材质球墙**与**产品图 3D 转盘**已可验收；robot-arm 仍为 stub。真实 GLB 角色 / Bloom / DOF / 线上 AI 集成均 **out of scope**。
+深色技术审美。无付费 API、无密钥。**Agent 假完成 DoD 闸门**、**图生材质球墙**、**产品图 3D 转盘**与**自然语言机械臂仿真**已可验收。真实 GLB 角色 / Bloom / DOF / 线上 AI 集成均 **out of scope**。
 
 ## 快速运行
 
@@ -37,7 +37,7 @@ src/
       agent-dod-gate/          # DoD 闸门（真实交互 · 可验收）
       material-spheres/        # 图生材质球墙（真实交互 · 可验收）
       product-turntable/       # 产品图 3D 转盘（真实交互 · 可验收）
-      robot-arm/
+      robot-arm/               # 自然语言机械臂仿真（真实交互 · 可验收）
   components/
     layout/Header.tsx          # Home + 4 demos，active state
     home/
@@ -52,6 +52,8 @@ src/
       MaterialSpheresCanvas*.tsx
       ProductTurntableDemo.tsx # 转盘：3 产品图 + 代理兜底 + 约 15s 录制
       ProductTurntableCanvas*.tsx
+      RobotArmDemo.tsx         # 机械臂：中文指令 + 脚本演示 + FPS
+      RobotArmCanvas*.tsx
   lib/
     demos.ts                   # 路由元数据、验收口径
     dod-gate.ts                # assertDod 纯函数 + 假完成用例
@@ -60,6 +62,8 @@ src/
     material-spheres.test.ts
     product-turntable.ts       # 样例目录 / proxy 启发式 / reel 指引
     product-turntable.test.ts
+    robot-arm.ts               # 中文规则映射 / 世界状态 / 脚本序列
+    robot-arm.test.ts
   public/demos/material-spheres/
     sample-ref.png
     homepage-ready.png
@@ -72,6 +76,7 @@ src/
     dod-gate.spec.ts
     material-spheres.spec.ts
     product-turntable.spec.ts
+    robot-arm.spec.ts
 ```
 
 ## 实现顺序（填实时）
@@ -227,10 +232,56 @@ npm run build && npm run test:e2e:turntable
 覆盖：样例切换、代理兜底、坏 recon 模拟、`uiFailure=load` 隐藏 Canvas、**正式 reel 入库**、**实测 TTI &lt;3000ms**、**桌面 mouse drag 旋转**、**touch/pointer drag 旋转**。  
 **CI 证明命令即：`npm run test:e2e:turntable`。**
 
-### robot-arm
+### robot-arm · 可验收
 
-- 10 条中文指令 ≥7 成功；失败可读  
-- 桌面 ≥30fps；否则脚本 demo + **LLM API TODO（付费）**  
+- **10 条固定中文指令**规则映射（抓取左/中/右、放下、放到左/中/右、复位、向左/向右旋转）；**脚本/评分路径抓取·放置成功 ≥7**
+- 失败可读：原因 + 下一步（空指令 / 未知 / 槽位空或占用 / 夹爪已持有）
+- **桌面 ≥30fps** 目标：页内 FPS 计数；R3F 简易 3–4 DOF 运动学臂（无重物理）；不稳定或 &lt;30 时走 **脚本演示** + **LLM API 付费 TODO（不接 key）**
+- 失败态：加载失败 / 空状态 / 无 WebGL（及 prefers-reduced-motion）可读；`uiFailure=load` 时**卸载 Canvas**
+- 单元测试：`npm run test:robot`；e2e smoke：`npm run test:e2e:robot`
+- 默认**无付费 API**；开放域自然语言 / LLM 仅文档 TODO
+
+#### 怎么演示（10 条指令）
+
+1. 打开 <http://localhost:3000/demos/robot-arm>
+2. 点快捷芯片依次试：**抓取左边的方块** → **放到右边** → **抓取中间的方块** → **放到左边** …（或直接点「脚本演示」）
+3. 十条固定短语：
+
+| # | 指令 |
+|---|------|
+| 1 | 抓取左边的方块 |
+| 2 | 抓取右边的方块 |
+| 3 | 抓取中间的方块 |
+| 4 | 放下 |
+| 5 | 放到左边 |
+| 6 | 放到右边 |
+| 7 | 放到中间 |
+| 8 | 复位 |
+| 9 | 向左旋转 |
+| 10 | 向右旋转 |
+
+4. 输入未知句（如「请帮我泡杯咖啡」）→ 失败横幅含**原因 + 下一步**
+5. 「失败态演示」切 **加载失败** → 横幅 + fallback，**Canvas 不出现**
+6. 观察页顶 **FPS**（目标 ≥30）与规则映射评分
+
+#### 脚本断言（纯函数）
+
+```bash
+npm run test:robot
+# 或一并
+npm test
+```
+
+核心：`parseCommand` / `applyAction` / `runScriptedDemo` / `evaluateDemoCommandsExecution`（见 `src/lib/robot-arm.ts`）。
+
+#### Playwright smoke（可选）
+
+```bash
+npx playwright install chromium
+npm run build && npm run test:e2e:robot
+```
+
+覆盖：快捷指令成功、未知指令失败可读、脚本演示评分注记、`uiFailure=load` 隐藏 Canvas。
 
 ### Shared
 
@@ -254,6 +305,7 @@ npm run build && npm run test:e2e:turntable
 - **agent-dod-gate**：加载失败 / 空状态 / 权限 / 超时可切换演示；离线/弱网可读提示；触控 ≥44px  
 - **material-spheres**：加载失败 / 空状态 / 无 WebGL 可切换演示；curated 静态墙兜底；触控 ≥44px  
 - **product-turntable**：加载失败 / 空状态 / 无 WebGL 可切换演示；代理模 + 贴图兜底；约 15s 录制或系统录屏指引；触控拖转 ≥44px  
+- **robot-arm**：加载失败 / 空状态 / 无 WebGL 可切换演示；脚本演示罐头序列；触控 ≥44px  
 
 
 ## Brand
