@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test:dod": "tsx --test src/lib/dod-gate.test.ts",
-    "test": "npm run test:dod"
+    "test": "npm run test:dod",
+    "test:e2e:dod": "playwright test e2e/dod-gate.spec.ts",
+    "test:e2e": "npm run test:e2e:dod"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -17,7 +17,7 @@ export const DEMOS: DemoMeta[] = [
     title: "Agent 假完成 DoD 闸门",
     titleEn: "Agent DoD Gate",
     pitch:
-      "拦住「看起来做完了」的假完成：缺证据、无标准就绿、边界未跑、清单对不上 → 一律不通过。",
+      "拦住「看起来做完了」的假完成：缺证据、无标准就绿、边界未跑、清单对不上、部分完成、工具失败/超时/空输出 → 一律不通过。",
     status: "可验收",
     order: 1,
     acceptance: [
@@ -104,6 +104,26 @@ export const DOD_FALSE_COMPLETE_CRITERIA = [
     id: "checklist-mismatch",
     label: "清单对不上",
     desc: "deliverable ID 与实际交付物、README、CI 断言不一致。",
+  },
+  {
+    id: "partial-complete",
+    label: "部分完成",
+    desc: "清单未全部标绿却声称可交付 — 有闸门时必须拦截。",
+  },
+  {
+    id: "tool-failure",
+    label: "工具失败",
+    desc: "工具调用失败却仍标绿。",
+  },
+  {
+    id: "timeout",
+    label: "超时",
+    desc: "运行超时却仍标绿。",
+  },
+  {
+    id: "empty-output",
+    label: "空输出",
+    desc: "输出为空却仍标绿。",
   },
 ] as const;
 

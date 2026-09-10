@@ -94,6 +94,24 @@ npx tsx --test src/lib/dod-gate.test.ts
 
 核心 API：`assertDod(state)`、`assertFakeCompleteSuite()`（见 `src/lib/dod-gate.ts`）。
 
+#### 新增用例怎么复现（Eval blockers）
+
+1. **部分完成**（必须拦截）：有闸门 → 预设「假完成 · 部分完成」→「标记完成」→ 命中 `partial-complete`，`ok=false` / `canMarkComplete=false`
+2. **工具失败 / 超时 / 空输出**：有闸门 → 对应预设 → 拦截；或在清单项改 `runStatus`
+3. **失败态 UI**：页内「失败态演示」切 加载失败 / 空状态 / 权限不足 / 请求超时
+4. **移动端弱网**：页顶「移动端 / 弱网提示」；离线时 `navigator.onLine=false` 文案切换；控件 `min-h-11`
+
+#### Playwright smoke（可选）
+
+```bash
+npm i -D @playwright/test
+npx playwright install chromium
+npm run build && npm run start   # 另开终端亦可；config 可自启
+npm run test:e2e:dod
+```
+
+覆盖：有闸门 + partial-complete → 标记完成被拦截；导出 JSON 按钮可点；失败态超时横幅可见。
+
 ### material-spheres
 
 - 1 参考图 → ≥4 材质球 + 灯光切换  
@@ -129,6 +147,7 @@ npx tsx --test src/lib/dod-gate.test.ts
 - JS / WebGL 失败：静态渐变 + 文案可读，不白屏  
 - `prefers-reduced-motion`：关闭 R3F，保留 HTML 层  
 - 窄屏：导航横滑；demo 单列；触控目标预留  
+- **agent-dod-gate**：加载失败 / 空状态 / 权限 / 超时可切换演示；离线/弱网可读提示；触控 ≥44px  
 
 ## Brand
 

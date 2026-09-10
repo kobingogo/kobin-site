@@ -1,7 +1,7 @@
 /**
  * Agent 假完成 DoD 闸门 — 纯函数核心（无付费 API、无浏览器依赖）
  * Boss 叙事：检查通过 ≠ 可交付
- * Eval 口径：缺证据 / 无标准就绿 / 边界未跑 / 清单对不上 = 假完成
+ * Eval 口径：缺证据 / 无标准就绿 / 边界未跑 / 清单对不上 / 部分完成 / 工具失败·超时·空输出 = 假完成
  */
 
 export const DOD_FALSE_COMPLETE_CODES = [
@@ -9,6 +9,10 @@ export const DOD_FALSE_COMPLETE_CODES = [
   "no-standard-green",
   "boundary-unrun",
   "checklist-mismatch",
+  "partial-complete",
+  "tool-failure",
+  "timeout",
+  "empty-output",
 ] as const;
 
 export type DodFailureCode = (typeof DOD_FALSE_COMPLETE_CODES)[number];
@@ -24,6 +28,12 @@ export const DOD_DELIVERABLE_IDS = [
 
 export type DodDeliverableId = (typeof DOD_DELIVERABLE_IDS)[number];
 
+export type DodRunStatus =
+  | "ok"
+  | "tool-failure"
+  | "timeout"
+  | "empty-output";
+
 export type DodItem = {
   id: string;
   label: string;
@@ -38,6 +48,11 @@ export type DodItem = {
   requiresEvidence: boolean;
   requiresStandard: boolean;
   requiresBoundary: boolean;
+  /**
+   * Agent/工具最近一次运行结果。
+   * 标绿但非 ok → 对应假完成口径（tool-failure / timeout / empty-output）
+   */
+  runStatus: DodRunStatus;
 };
 
 export type DodState = {
@@ -80,6 +95,7 @@ export const DEFAULT_DOD_ITEMS: DodItem[] = [
     requiresEvidence: true,
     requiresStandard: true,
     requiresBoundary: true,
+    runStatus: "ok",
   },
   {
     id: "item-assert",
@@ -91,6 +107,7 @@ export const DEFAULT_DOD_ITEMS: DodItem[] = [
     requiresEvidence: true,
     requiresStandard: true,
     requiresBoundary: true,
+    runStatus: "ok",
   },
   {
     id: "item-zero-pass",
@@ -102,6 +119,7 @@ export const DEFAULT_DOD_ITEMS: DodItem[] = [
     requiresEvidence: true,
     requiresStandard: true,
     requiresBoundary: false,
+    runStatus: "ok",
   },
   {
     id: "item-block-rate",
@@ -113,6 +131,7 @@ export const DEFAULT_DOD_ITEMS: DodItem[] = [
     requiresEvidence: true,
     requiresStandard: true,
     requiresBoundary: true,
+    runStatus: "ok",
   },
   {
     id: "item-id-registry",
@@ -124,6 +143,7 @@ export const DEFAULT_DOD_ITEMS: DodItem[] = [
     requiresEvidence: true,
     requiresStandard: true,
     requiresBoundary: false,
+    runStatus: "ok",
   },
 ];
 
@@ -160,6 +180,14 @@ export function assertDod(
 ): DodAssertResult {
   const failures: DodFailure[] = [];
 
+  const incomplete = state.items.filter((i) => !i.markedDone);
+  if (incomplete.length > 0) {
+    failures.push({
+      code: "partial-complete",
+      message: `部分完成不可交付：仍有 ${incomplete.length} 项未标绿（${incomplete.map((i) => i.id).join(", ")}）`,
+    });
+  }
+
   for (const item of state.items) {
     if (!item.markedDone) continue;
 
@@ -184,6 +212,27 @@ export function assertDod(
         code: "boundary-unrun",
         itemId: item.id,
         message: `「${item.label}」边界 / 失败路径未跑`,
+      });
+    }
+
+    const status = item.runStatus ?? "ok";
+    if (status === "tool-failure") {
+      failures.push({
+        code: "tool-failure",
+        itemId: item.id,
+        message: `「${item.label}」工具调用失败仍标绿`,
+      });
+    } else if (status === "timeout") {
+      failures.push({
+        code: "timeout",
+        itemId: item.id,
+        message: `「${item.label}」运行超时仍标绿`,
+      });
+    } else if (status === "empty-output") {
+      failures.push({
+        code: "empty-output",
+        itemId: item.id,
+        message: `「${item.label}」输出为空仍标绿`,
       });
     }
   }
@@ -224,7 +273,7 @@ function cloneItems(items: DodItem[]): DodItem[] {
   return items.map((i) => ({ ...i }));
 }
 
-/** 四类假完成 + 合规模板，供 UI 预设与脚本断言 */
+/** 假完成用例（原四类 + 部分完成/工具失败/超时/空输出）+ 合规模板 */
 export const FAKE_COMPLETE_CASES: FakeCompleteCase[] = [
   {
     id: "case-missing-evidence",
@@ -309,10 +358,87 @@ export const FAKE_COMPLETE_CASES: FakeCompleteCase[] = [
         evidence: idx === 0 ? "" : `evidence://${i.id}`,
         standard: idx === 2 ? "" : i.standard || `标准·${i.id}`,
         boundaryRun: idx % 2 === 0 ? false : true,
+        runStatus: "ok" as DodRunStatus,
       }));
       return {
         items,
         claimedDeliverableIds: ["WRONG-ID"],
+      };
+    },
+  },
+  {
+    id: "case-partial-complete",
+    label: "假完成 · 部分完成",
+    description: "部分项标绿、部分未完成 — 有闸门时不得放行",
+    build: () => {
+      const items = cloneItems(DEFAULT_DOD_ITEMS).map((i, idx) => ({
+        ...i,
+        markedDone: idx < 2,
+        evidence: `evidence://${i.id}#sha256:demo`,
+        standard: i.standard || `验收标准·${i.id}`,
+        boundaryRun: true,
+        runStatus: "ok" as DodRunStatus,
+      }));
+      return {
+        items,
+        claimedDeliverableIds: [...DOD_DELIVERABLE_IDS],
+      };
+    },
+  },
+  {
+    id: "case-tool-failure",
+    label: "假完成 · 工具失败",
+    description: "清单标绿但工具调用失败（runStatus=tool-failure）",
+    build: () => {
+      const items = cloneItems(DEFAULT_DOD_ITEMS).map((i, idx) => ({
+        ...i,
+        markedDone: true,
+        evidence: `evidence://${i.id}`,
+        standard: i.standard || `标准·${i.id}`,
+        boundaryRun: true,
+        runStatus: (idx === 0 ? "tool-failure" : "ok") as DodRunStatus,
+      }));
+      return {
+        items,
+        claimedDeliverableIds: [...DOD_DELIVERABLE_IDS],
+      };
+    },
+  },
+  {
+    id: "case-timeout",
+    label: "假完成 · 超时",
+    description: "运行超时仍标绿（runStatus=timeout）",
+    build: () => {
+      const items = cloneItems(DEFAULT_DOD_ITEMS).map((i, idx) => ({
+        ...i,
+        markedDone: true,
+        evidence: `evidence://${i.id}`,
+        standard: i.standard || `标准·${i.id}`,
+        boundaryRun: true,
+        runStatus: (idx === 1 ? "timeout" : "ok") as DodRunStatus,
+      }));
+      return {
+        items,
+        claimedDeliverableIds: [...DOD_DELIVERABLE_IDS],
+      };
+    },
+  },
+  {
+    id: "case-empty-output",
+    label: "假完成 · 空输出",
+    description: "输出为空仍标绿（runStatus=empty-output）",
+    build: () => {
+      const items = cloneItems(DEFAULT_DOD_ITEMS).map((i, idx) => ({
+        ...i,
+        markedDone: true,
+        evidence: idx === 0 ? "(empty)" : `evidence://${i.id}`,
+        standard: i.standard || `标准·${i.id}`,
+        boundaryRun: true,
+        runStatus: (idx === 0 ? "empty-output" : "ok") as DodRunStatus,
+      }));
+      return {
+        items,
+        claimedDeliverableIds: [...DOD_DELIVERABLE_IDS],
       };
     },
   },
@@ -329,6 +455,7 @@ export const COMPLIANT_CASE: FakeCompleteCase = {
       evidence: `evidence://${i.id}#sha256:demo`,
       standard: i.standard || `验收标准·${i.id}`,
       boundaryRun: true,
+      runStatus: "ok" as DodRunStatus,
     }));
     return {
       items,

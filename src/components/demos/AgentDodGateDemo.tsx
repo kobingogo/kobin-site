@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   assertDod,
@@ -11,6 +11,7 @@ import {
   DEFAULT_DOD_ITEMS,
   FAKE_COMPLETE_CASES,
   type DodItem,
+  type DodRunStatus,
   type DodState,
   type EvalHandoff,
 } from "@/lib/dod-gate";
@@ -19,6 +20,39 @@ import { DOD_FALSE_COMPLETE_CRITERIA } from "@/lib/demos";
 type PresetId = string;
 
 const PRESETS = [...FAKE_COMPLETE_CASES, COMPLIANT_CASE];
+
+type UiFailureKind = "none" | "load" | "empty" | "permission" | "timeout";
+
+const UI_FAILURE_OPTIONS: { id: UiFailureKind; label: string; tip: string }[] = [
+  { id: "none", label: "正常", tip: "" },
+  {
+    id: "load",
+    label: "加载失败",
+    tip: "清单数据加载失败。请检查网络后点「重试」；离线时可继续用本地预设验收闸门逻辑。",
+  },
+  {
+    id: "empty",
+    label: "空状态",
+    tip: "当前无 DoD 清单项。请选择预设用例加载，或确认权限/数据源未被清空。",
+  },
+  {
+    id: "permission",
+    label: "权限不足",
+    tip: "无权写入「标记完成」状态（演示）。导出 JSON / 只读断言仍可用。",
+  },
+  {
+    id: "timeout",
+    label: "请求超时",
+    tip: "同步断言结果超时。可点「重试」；弱网下建议先跑 npm run test:dod 本地断言。",
+  },
+];
+
+const RUN_STATUS_OPTIONS: { id: DodRunStatus; label: string }[] = [
+  { id: "ok", label: "ok" },
+  { id: "tool-failure", label: "工具失败" },
+  { id: "timeout", label: "超时" },
+  { id: "empty-output", label: "空输出" },
+];
 
 function applyPreset(presetId: PresetId, gateOn: boolean): DodState {
   const preset = PRESETS.find((p) => p.id === presetId) ?? FAKE_COMPLETE_CASES[0];
@@ -41,6 +75,25 @@ export function AgentDodGateDemo() {
   );
   const [copied, setCopied] = useState(false);
   const [suiteNote, setSuiteNote] = useState<string | null>(null);
+  const [uiFailure, setUiFailure] = useState<UiFailureKind>("none");
+  const [online, setOnline] = useState(true);
+  const [slowNetTip, setSlowNetTip] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
+    sync();
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    // 弱网可读提示：首屏短暂展示，不挡操作
+    const t = window.setTimeout(() => setSlowNetTip(true), 0);
+    const t2 = window.setTimeout(() => setSlowNetTip(false), 8000);
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+      window.clearTimeout(t);
+      window.clearTimeout(t2);
+    };
+  }, []);
 
   const state: DodState = useMemo(
     () => ({ gateOn, items, claimedDeliverableIds: claimedIds }),
@@ -85,6 +138,16 @@ export function AgentDodGateDemo() {
   };
 
   const onMarkComplete = () => {
+    if (uiFailure === "permission") {
+      setCompleteKind("blocked");
+      setCompleteMsg("权限不足：无法写入标记完成（失败态演示）。");
+      return;
+    }
+    if (uiFailure === "timeout") {
+      setCompleteKind("blocked");
+      setCompleteMsg("请求超时：标记完成未确认（失败态演示）。可重试或切回「正常」。");
+      return;
+    }
     const r = assertDod(state);
     if (!state.gateOn) {
       setCompleteKind("ok");
@@ -159,8 +222,77 @@ export function AgentDodGateDemo() {
       </h1>
       <p className="mt-2 text-sm text-zinc-500">Agent DoD Gate</p>
       <p className="mt-4 text-base leading-relaxed text-zinc-300 sm:text-lg">
-        检查通过 ≠ 可交付。缺证据 / 无标准就绿 / 边界未跑 / 清单对不上 → 假完成。
+        检查通过 ≠ 可交付。缺证据 / 无标准就绿 / 边界未跑 / 清单对不上 / 部分完成 / 工具失败·超时·空输出 → 假完成。
       </p>
+
+      {/* Mobile / offline degrade */}
+      <aside
+        className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-950/30 p-4 text-sm text-amber-100"
+        data-testid="mobile-net-tip"
+      >
+        <p className="font-mono text-xs text-amber-300/90">移动端 / 弱网提示</p>
+        <ul className="mt-2 space-y-1 text-xs leading-relaxed text-amber-100/90 sm:text-sm">
+          <li>
+            · 网络：{online ? "在线" : "离线"} —{" "}
+            {online
+              ? "弱网时可先读本页清单与失败原因；脚本断言不依赖浏览器。"
+              : "离线可读：闸门逻辑在本地运行，预设用例与「标记完成」仍可点。"}
+          </li>
+          {(slowNetTip || !online) && (
+            <li>· 慢网：深色底不白屏；触控按钮 ≥44px，单列可滚动。</li>
+          )}
+          <li>· 小屏：下方控件均为 min-h-11，拇指可点。</li>
+        </ul>
+      </aside>
+
+      {/* Failure states demo */}
+      <section className="mt-6 rounded-2xl border border-white/10 bg-zinc-900/70 p-4 sm:p-6">
+        <h2 className="font-mono text-sm text-cyan-300">失败态演示</h2>
+        <p className="mt-2 text-xs text-zinc-500">
+          加载失败 / 空状态 / 权限 / 超时 — 可读、可切换，不白屏。
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {UI_FAILURE_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              data-testid={`ui-failure-${opt.id}`}
+              onClick={() => {
+                setUiFailure(opt.id);
+                setCompleteMsg(null);
+                setCompleteKind(null);
+              }}
+              className={`min-h-11 rounded-xl px-2 py-2 text-xs font-medium transition sm:text-sm ${
+                uiFailure === opt.id
+                  ? "bg-rose-500/20 text-rose-100 ring-1 ring-rose-400/40"
+                  : "bg-black/40 text-zinc-400 ring-1 ring-white/10 hover:bg-white/5"
+              }`}
+              aria-pressed={uiFailure === opt.id}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {uiFailure !== "none" && (
+          <div
+            role="alert"
+            data-testid="ui-failure-banner"
+            className="mt-4 rounded-xl border border-rose-500/40 bg-rose-950/40 px-4 py-3 text-sm text-rose-100"
+          >
+            <p className="font-medium">{UI_FAILURE_OPTIONS.find((o) => o.id === uiFailure)?.label}</p>
+            <p className="mt-1 text-xs text-rose-200/90 sm:text-sm">
+              {UI_FAILURE_OPTIONS.find((o) => o.id === uiFailure)?.tip}
+            </p>
+            <button
+              type="button"
+              className="mt-3 min-h-11 rounded-lg bg-rose-500/30 px-4 text-sm text-rose-50 ring-1 ring-rose-400/40"
+              onClick={() => setUiFailure("none")}
+            >
+              重试 / 恢复正常
+            </button>
+          </div>
+        )}
+      </section>
 
       {/* Mode toggle */}
       <section className="mt-8 rounded-2xl border border-white/10 bg-zinc-900/70 p-4 sm:p-6">
@@ -168,6 +300,7 @@ export function AgentDodGateDemo() {
         <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3">
           <button
             type="button"
+            data-testid="gate-off"
             onClick={() => toggleGate(false)}
             className={`min-h-11 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
               !gateOn
@@ -183,6 +316,7 @@ export function AgentDodGateDemo() {
           </button>
           <button
             type="button"
+            data-testid="gate-on"
             onClick={() => toggleGate(true)}
             className={`min-h-11 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
               gateOn
@@ -201,6 +335,7 @@ export function AgentDodGateDemo() {
         <label className="mt-5 block">
           <span className="font-mono text-xs text-zinc-400">预设用例</span>
           <select
+            data-testid="preset-select"
             className="mt-2 min-h-11 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-sm text-zinc-100"
             value={presetId}
             onChange={(e) => loadPreset(e.target.value)}
@@ -250,7 +385,18 @@ export function AgentDodGateDemo() {
           </p>
         </div>
 
-        {items.map((item) => {
+        {(uiFailure === "load" || uiFailure === "empty") && (
+          <div
+            data-testid="checklist-empty-or-load"
+            className="rounded-2xl border border-dashed border-white/15 bg-black/40 px-4 py-8 text-center text-sm text-zinc-400"
+          >
+            {uiFailure === "load"
+              ? "加载失败：清单暂不可用（演示）。点上方「重试 / 恢复正常」。"
+              : "空状态：暂无清单项（演示）。选择预设或恢复正常。"}
+          </div>
+        )}
+
+        {uiFailure !== "load" && uiFailure !== "empty" && items.map((item) => {
           const itemFails = failureByItem.get(item.id) ?? [];
           const looksGreen = item.markedDone;
           return (
@@ -330,6 +476,25 @@ export function AgentDodGateDemo() {
                 )}
               </label>
 
+              <label className="mt-3 block text-xs text-zinc-400">
+                运行结果 runStatus
+                <select
+                  className="mt-1 min-h-11 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-zinc-100"
+                  value={item.runStatus ?? "ok"}
+                  onChange={(e) =>
+                    updateItem(item.id, {
+                      runStatus: e.target.value as DodRunStatus,
+                    })
+                  }
+                >
+                  {RUN_STATUS_OPTIONS.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               {itemFails.length > 0 && (
                 <ul className="mt-3 space-y-1 rounded-lg border border-rose-500/30 bg-rose-950/40 px-3 py-2 text-xs text-rose-200">
                   {itemFails.map((f, i) => (
@@ -394,6 +559,7 @@ export function AgentDodGateDemo() {
       <section className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <button
           type="button"
+          data-testid="mark-complete"
           onClick={onMarkComplete}
           className="min-h-11 flex-1 rounded-xl bg-cyan-500/90 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
         >
@@ -401,6 +567,7 @@ export function AgentDodGateDemo() {
         </button>
         <button
           type="button"
+          data-testid="export-json"
           onClick={exportJson}
           className="min-h-11 rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-sm text-zinc-200 transition hover:bg-white/5"
         >
@@ -418,6 +585,7 @@ export function AgentDodGateDemo() {
       {completeMsg && (
         <div
           role="status"
+          data-testid="complete-status"
           className={`mt-4 rounded-xl border px-4 py-3 text-sm ${
             completeKind === "blocked"
               ? "border-rose-500/40 bg-rose-950/40 text-rose-100"
@@ -502,7 +670,7 @@ npx tsx --test src/lib/dod-gate.test.ts`}
       </section>
 
       <p className="mt-8 text-xs text-zinc-600">
-        移动端单列 · 触控目标 ≥44px · 深色底防白屏 · 无付费 API
+        移动端单列 · 触控 ≥44px · 离线/弱网可读提示 · 失败态可演示 · 深色底防白屏 · 无付费 API
       </p>
 
       <p className="mt-6">

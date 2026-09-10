@@ -80,6 +80,49 @@ describe("assertDod — gated blocks", () => {
     );
   });
 
+  it("case-partial-complete is NOT ok and blocks mark-complete", () => {
+    const built = FAKE_COMPLETE_CASES.find(
+      (c) => c.id === "case-partial-complete",
+    )!.build();
+    const result = assertDod({ ...built, gateOn: true });
+    assert.equal(result.ok, false);
+    assert.equal(result.canMarkComplete, false);
+    assert.ok(
+      result.failures.some((f) => f.code === "partial-complete"),
+      "must hit partial-complete",
+    );
+  });
+
+  it("case-tool-failure hits tool-failure", () => {
+    const built = FAKE_COMPLETE_CASES.find(
+      (c) => c.id === "case-tool-failure",
+    )!.build();
+    const result = assertDod({ ...built, gateOn: true });
+    assert.equal(result.ok, false);
+    assert.equal(result.canMarkComplete, false);
+    assert.ok(result.failures.some((f) => f.code === "tool-failure"));
+  });
+
+  it("case-timeout hits timeout", () => {
+    const built = FAKE_COMPLETE_CASES.find(
+      (c) => c.id === "case-timeout",
+    )!.build();
+    const result = assertDod({ ...built, gateOn: true });
+    assert.equal(result.ok, false);
+    assert.equal(result.canMarkComplete, false);
+    assert.ok(result.failures.some((f) => f.code === "timeout"));
+  });
+
+  it("case-empty-output hits empty-output", () => {
+    const built = FAKE_COMPLETE_CASES.find(
+      (c) => c.id === "case-empty-output",
+    )!.build();
+    const result = assertDod({ ...built, gateOn: true });
+    assert.equal(result.ok, false);
+    assert.equal(result.canMarkComplete, false);
+    assert.ok(result.failures.some((f) => f.code === "empty-output"));
+  });
+
   it("compliant case passes when gate ON", () => {
     const built = COMPLIANT_CASE.build();
     const result = assertDod({ ...built, gateOn: true });
@@ -111,5 +154,19 @@ describe("deliverable ID registry", () => {
     assert.equal(handoff.demo, "agent-dod-gate");
     assert.equal(handoff.ok, true);
     assert.deepEqual([...handoff.deliverableIds], [...DOD_DELIVERABLE_IDS]);
+  });
+});
+
+describe("expanded fake-complete case ids", () => {
+  it("includes partial / tool-failure / timeout / empty-output", () => {
+    const ids = new Set(FAKE_COMPLETE_CASES.map((c) => c.id));
+    for (const id of [
+      "case-partial-complete",
+      "case-tool-failure",
+      "case-timeout",
+      "case-empty-output",
+    ]) {
+      assert.ok(ids.has(id), `missing ${id}`);
+    }
   });
 });
