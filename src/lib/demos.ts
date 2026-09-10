@@ -80,10 +80,10 @@ export const DEMOS: DemoMeta[] = [
     acceptance: [
       "10 条固定中文指令规则映射；脚本/评分路径抓取·放置成功 ≥7",
       "失败状态可读（原因 + 下一步）；未知指令明确提示",
-      "桌面 ≥30fps（页内 FPS）；不稳定或 <30 时走脚本演示 + LLM API 付费 TODO（不接 key）",
+      "桌面硬门槛 ≥30fps（页内 rAF 实测 FPS）；默认均衡画质；不稳定或 <30 自动/手动进一步降级 + 脚本演示 + LLM API 付费 TODO（不接 key）",
       "失败态：加载失败 / 空状态 / 无 WebGL 可读，移动端无白屏（Canvas 卸载）",
-      "单元测试覆盖 command→action；e2e smoke；npm run build 通过",
-      "共享：移动端无白屏；后续 ≤20s reel",
+      "单元测试覆盖 command→action；e2e（reel + FPS≥30）；npm run build 通过",
+      "正式 ≤20s reel.webm 已入库（页内可播放/可链接）",
     ],
     paidApiNotes: [
       "自然语言理解 / 开放域 LLM API 为付费 TODO（README 标注，本脚手架不接 key；默认规则映射）",

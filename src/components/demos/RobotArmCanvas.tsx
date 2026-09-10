@@ -10,10 +10,14 @@ import {
 } from "react";
 import { Vector3, type Group, type Mesh } from "three";
 import {
+  DEFAULT_QUALITY,
+  QUALITY_PROFILES,
   SLOT_POSITIONS,
   type ArmJoints,
   type CubeId,
   type CubeState,
+  type QualityProfile,
+  type RenderQuality,
   type SlotId,
   type WorldState,
 } from "@/lib/robot-arm";
@@ -24,55 +28,62 @@ export type RobotArmCanvasProps = {
   displayJoints?: ArmJoints;
   className?: string;
   onInteractive?: () => void;
+  /** Real rAF / useFrame sampled FPS */
   onFps?: (fps: number) => void;
   canvasElRef?: MutableRefObject<HTMLCanvasElement | null>;
+  quality?: RenderQuality;
 };
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
+/** Sample FPS from R3F frame loop (backed by requestAnimationFrame). */
 function FpsProbe({ onFps }: { onFps?: (fps: number) => void }) {
   const frames = useRef(0);
-  const last = useRef(0);
-  useFrame((_, delta) => {
+  const windowStart = useRef(0);
+  useFrame(() => {
+    const now =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (windowStart.current === 0) {
+      windowStart.current = now;
+      frames.current = 0;
+      return;
+    }
     frames.current += 1;
-    last.current += delta;
-    if (last.current >= 0.5) {
-      const fps = frames.current / last.current;
+    const elapsed = now - windowStart.current;
+    if (elapsed >= 500) {
+      const fps = (frames.current * 1000) / elapsed;
       onFps?.(fps);
       frames.current = 0;
-      last.current = 0;
+      windowStart.current = now;
     }
   });
   return null;
 }
 
-function Table() {
+function Table({ profile }: { profile: QualityProfile }) {
+  const seg = profile.segments;
   return (
     <group>
-      <mesh position={[0, 0.05, 0.35]} receiveShadow>
+      <mesh position={[0, 0.05, 0.35]} receiveShadow={profile.shadows}>
         <boxGeometry args={[2.6, 0.1, 1.4]} />
         <meshStandardMaterial color="#1e293b" metalness={0.2} roughness={0.75} />
       </mesh>
-      {/* Slot markers */}
       {(Object.keys(SLOT_POSITIONS) as SlotId[]).map((slot) => {
         const [x, z] = SLOT_POSITIONS[slot];
         return (
-          <mesh key={slot} position={[x, 0.11, z]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.16, 0.2, 24]} />
-            <meshStandardMaterial
-              color="#22d3ee"
-              transparent
-              opacity={0.35}
-              metalness={0.1}
-              roughness={0.8}
-            />
+          <mesh
+            key={slot}
+            position={[x, 0.11, z]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <ringGeometry args={[0.16, 0.2, Math.max(8, seg)]} />
+            <meshBasicMaterial color="#22d3ee" transparent opacity={0.35} />
           </mesh>
         );
       })}
-      {/* Bin shelf for parked cube */}
-      <mesh position={[1.35, 0.18, -0.15]} receiveShadow>
+      <mesh position={[1.35, 0.18, -0.15]} receiveShadow={profile.shadows}>
         <boxGeometry args={[0.45, 0.08, 0.45]} />
         <meshStandardMaterial color="#334155" metalness={0.15} roughness={0.7} />
       </mesh>
@@ -84,10 +95,12 @@ function Cubes({
   cubes,
   held,
   gripperWorld,
+  profile,
 }: {
   cubes: Record<CubeId, CubeState>;
   held: CubeId | null;
   gripperWorld: MutableRefObject<[number, number, number]>;
+  profile: QualityProfile;
 }) {
   const refs = useRef<Partial<Record<CubeId, Mesh>>>({});
 
@@ -119,7 +132,7 @@ function Cubes({
           ref={(m) => {
             if (m) refs.current[id] = m;
           }}
-          castShadow
+          castShadow={profile.shadows}
         >
           <boxGeometry args={[0.22, 0.22, 0.22]} />
           <meshStandardMaterial
@@ -136,9 +149,11 @@ function Cubes({
 function Arm({
   joints,
   gripperWorld,
+  profile,
 }: {
   joints: ArmJoints;
   gripperWorld: MutableRefObject<[number, number, number]>;
+  profile: QualityProfile;
 }) {
   const baseRef = useRef<Group>(null);
   const shoulderRef = useRef<Group>(null);
@@ -146,6 +161,10 @@ function Arm({
   const wristRef = useRef<Group>(null);
   const display = useRef<ArmJoints>({ ...joints });
   const _wristWorld = useMemo(() => new Vector3(), []);
+  const leftJaw = useRef<Mesh>(null);
+  const rightJaw = useRef<Mesh>(null);
+  const seg = profile.segments;
+  const cast = profile.shadows;
 
   useFrame((_, delta) => {
     const t = Math.min(1, delta * 8);
@@ -164,59 +183,78 @@ function Arm({
       const v = wristRef.current.getWorldPosition(_wristWorld);
       gripperWorld.current = [v.x, v.y, v.z];
     }
-  });
-
-  const gap = useMemo(() => {
-    // open = 0.09, closed = 0.03
-    return 0.09 - joints.gripper * 0.06;
-  }, [joints.gripper]);
-
-  // Recompute gap from lerped value in frame via refs on jaws
-  const leftJaw = useRef<Mesh>(null);
-  const rightJaw = useRef<Mesh>(null);
-  useFrame(() => {
     const g = 0.09 - display.current.gripper * 0.06;
     if (leftJaw.current) leftJaw.current.position.x = -g;
     if (rightJaw.current) rightJaw.current.position.x = g;
   });
 
+  const gap = 0.09 - joints.gripper * 0.06;
+
   return (
     <group position={[0, 0.1, -0.35]}>
-      {/* Base pedestal */}
-      <mesh position={[0, 0.12, 0]} castShadow>
-        <cylinderGeometry args={[0.28, 0.32, 0.24, 24]} />
+      <mesh position={[0, 0.12, 0]} castShadow={cast}>
+        <cylinderGeometry args={[0.28, 0.32, 0.24, seg]} />
         <meshStandardMaterial color="#0f172a" metalness={0.5} roughness={0.35} />
       </mesh>
       <group ref={baseRef} position={[0, 0.24, 0]}>
-        <mesh position={[0, 0.08, 0]} castShadow>
-          <cylinderGeometry args={[0.16, 0.18, 0.16, 20]} />
-          <meshStandardMaterial color="#155e75" metalness={0.55} roughness={0.3} />
+        <mesh position={[0, 0.08, 0]} castShadow={cast}>
+          <cylinderGeometry args={[0.16, 0.18, 0.16, seg]} />
+          <meshStandardMaterial
+            color="#155e75"
+            metalness={0.55}
+            roughness={0.3}
+          />
         </mesh>
-        {/* Shoulder */}
         <group ref={shoulderRef} position={[0, 0.16, 0]}>
-          <mesh position={[0.35, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <mesh
+            position={[0.35, 0, 0]}
+            rotation={[0, 0, Math.PI / 2]}
+            castShadow={cast}
+          >
             <boxGeometry args={[0.14, 0.7, 0.14]} />
-            <meshStandardMaterial color="#22d3ee" metalness={0.4} roughness={0.35} />
+            <meshStandardMaterial
+              color="#22d3ee"
+              metalness={0.4}
+              roughness={0.35}
+            />
           </mesh>
-          {/* Elbow */}
           <group ref={elbowRef} position={[0.7, 0, 0]}>
-            <mesh position={[0.3, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <mesh
+              position={[0.3, 0, 0]}
+              rotation={[0, 0, Math.PI / 2]}
+              castShadow={cast}
+            >
               <boxGeometry args={[0.12, 0.6, 0.12]} />
-              <meshStandardMaterial color="#67e8f9" metalness={0.4} roughness={0.35} />
+              <meshStandardMaterial
+                color="#67e8f9"
+                metalness={0.4}
+                roughness={0.35}
+              />
             </mesh>
-            {/* Wrist / gripper mount */}
             <group ref={wristRef} position={[0.6, 0, 0]}>
-              <mesh castShadow>
+              <mesh castShadow={cast}>
                 <boxGeometry args={[0.12, 0.12, 0.12]} />
-                <meshStandardMaterial color="#e2e8f0" metalness={0.6} roughness={0.25} />
+                <meshStandardMaterial
+                  color="#e2e8f0"
+                  metalness={0.6}
+                  roughness={0.25}
+                />
               </mesh>
-              <mesh ref={leftJaw} position={[-gap, -0.12, 0]} castShadow>
+              <mesh ref={leftJaw} position={[-gap, -0.12, 0]} castShadow={cast}>
                 <boxGeometry args={[0.04, 0.18, 0.08]} />
-                <meshStandardMaterial color="#fbbf24" metalness={0.5} roughness={0.3} />
+                <meshStandardMaterial
+                  color="#fbbf24"
+                  metalness={0.5}
+                  roughness={0.3}
+                />
               </mesh>
-              <mesh ref={rightJaw} position={[gap, -0.12, 0]} castShadow>
+              <mesh ref={rightJaw} position={[gap, -0.12, 0]} castShadow={cast}>
                 <boxGeometry args={[0.04, 0.18, 0.08]} />
-                <meshStandardMaterial color="#fbbf24" metalness={0.5} roughness={0.3} />
+                <meshStandardMaterial
+                  color="#fbbf24"
+                  metalness={0.5}
+                  roughness={0.3}
+                />
               </mesh>
             </group>
           </group>
@@ -232,12 +270,14 @@ function SceneContent({
   onInteractive,
   onFps,
   gripperWorld,
+  profile,
 }: {
   world: WorldState;
   displayJoints?: ArmJoints;
   onInteractive?: () => void;
   onFps?: (fps: number) => void;
   gripperWorld: MutableRefObject<[number, number, number]>;
+  profile: QualityProfile;
 }) {
   const ready = useRef(false);
   useEffect(() => {
@@ -252,29 +292,35 @@ function SceneContent({
   return (
     <>
       <color attach="background" args={["#020617"]} />
-      <ambientLight intensity={0.45} />
+      <ambientLight intensity={0.55} />
       <directionalLight
         position={[3, 6, 2]}
-        intensity={1.15}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        intensity={1.05}
+        castShadow={profile.shadows}
+        shadow-mapSize-width={profile.shadowMapSize}
+        shadow-mapSize-height={profile.shadowMapSize}
       />
-      <pointLight position={[-2, 3, -1]} intensity={0.35} color="#67e8f9" />
-      <Table />
-      <Arm joints={joints} gripperWorld={gripperWorld} />
+      {!profile.shadows && (
+        <pointLight position={[-2, 3, -1]} intensity={0.25} color="#67e8f9" />
+      )}
+      <Table profile={profile} />
+      <Arm joints={joints} gripperWorld={gripperWorld} profile={profile} />
       <Cubes
         cubes={world.cubes}
         held={world.held}
         gripperWorld={gripperWorld}
+        profile={profile}
       />
-      <ContactShadows
-        position={[0, 0.01, 0]}
-        opacity={0.45}
-        scale={8}
-        blur={2.2}
-        far={4}
-      />
+      {profile.contactShadows && (
+        <ContactShadows
+          position={[0, 0.01, 0]}
+          opacity={0.35}
+          scale={8}
+          blur={1.8}
+          far={3}
+          resolution={256}
+        />
+      )}
       <OrbitControls
         enablePan={false}
         minPolarAngle={0.4}
@@ -295,8 +341,10 @@ export function RobotArmCanvas({
   onInteractive,
   onFps,
   canvasElRef,
+  quality = DEFAULT_QUALITY,
 }: RobotArmCanvasProps) {
   const gripperWorld = useRef<[number, number, number]>([0, 1, 0]);
+  const profile = QUALITY_PROFILES[quality];
 
   return (
     <div
@@ -305,14 +353,28 @@ export function RobotArmCanvas({
         "h-[min(62vh,520px)] min-h-[280px] w-full overflow-hidden rounded-2xl border border-cyan-500/20 bg-slate-950"
       }
       data-testid="robot-arm-canvas"
+      data-quality={quality}
     >
       <Canvas
-        shadows
-        dpr={[1, 1.75]}
+        key={quality}
+        shadows={profile.shadows}
+        dpr={[1, profile.dprMax]}
         camera={{ position: [2.6, 2.1, 2.8], fov: 42, near: 0.1, far: 40 }}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
+        gl={{
+          antialias: profile.antialias,
+          powerPreference: "high-performance",
+          stencil: false,
+          depth: true,
+        }}
+        frameloop="always"
         onCreated={({ gl }) => {
           if (canvasElRef) canvasElRef.current = gl.domElement;
+          gl.setPixelRatio(
+            Math.min(
+              typeof window !== "undefined" ? window.devicePixelRatio : 1,
+              profile.dprMax,
+            ),
+          );
         }}
       >
         <SceneContent
@@ -321,6 +383,7 @@ export function RobotArmCanvas({
           onInteractive={onInteractive}
           onFps={onFps}
           gripperWorld={gripperWorld}
+          profile={profile}
         />
       </Canvas>
     </div>

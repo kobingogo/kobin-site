@@ -72,6 +72,80 @@ export type UiFailureKind = "none" | "load" | "empty" | "nowebgl";
 
 export const FPS_TARGET = 30;
 
+/** Formal portfolio reel committed under public/ (≤20s) */
+export const REEL_ASSET_PATH = "/demos/robot-arm/reel.webm";
+export const REEL_DURATION_S = 12;
+
+/** Render quality tiers — default balanced targets ≥30fps; low is further degrade. */
+export type RenderQuality = "high" | "balanced" | "low";
+
+export type QualityProfile = {
+  id: RenderQuality;
+  label: string;
+  /** Max device pixel ratio */
+  dprMax: number;
+  antialias: boolean;
+  shadows: boolean;
+  shadowMapSize: number;
+  contactShadows: boolean;
+  /** Cylinder / ring segment counts */
+  segments: number;
+};
+
+export const QUALITY_PROFILES: Record<RenderQuality, QualityProfile> = {
+  high: {
+    id: "high",
+    label: "高画质",
+    dprMax: 1.5,
+    antialias: true,
+    shadows: true,
+    shadowMapSize: 1024,
+    contactShadows: true,
+    segments: 20,
+  },
+  balanced: {
+    id: "balanced",
+    label: "均衡（默认 ≥30fps）",
+    dprMax: 1,
+    antialias: false,
+    shadows: false,
+    shadowMapSize: 512,
+    contactShadows: false,
+    segments: 10,
+  },
+  low: {
+    id: "low",
+    label: "进一步降级",
+    dprMax: 1,
+    antialias: false,
+    shadows: false,
+    shadowMapSize: 256,
+    contactShadows: false,
+    segments: 6,
+  },
+};
+
+export const DEFAULT_QUALITY: RenderQuality = "balanced";
+
+/** Consecutive sub-target samples before auto-degrade */
+export const FPS_DEGRADE_STREAK = 3;
+
+export function nextLowerQuality(q: RenderQuality): RenderQuality | null {
+  if (q === "high") return "balanced";
+  if (q === "balanced") return "low";
+  return null;
+}
+
+export function buildReelGuidance(): string[] {
+  return [
+    `正式作品集 reel：${REEL_ASSET_PATH}（本地生成 ${REEL_DURATION_S}s 抓取/放置短片，无付费 API）。`,
+    "页内可预览 / 新标签打开 reel.webm；验收用快捷指令或「脚本演示」。",
+    "桌面目标 ≥30fps：默认均衡画质；若仍 <30 自动/手动进一步降级，并走脚本演示路径。",
+    "开放域自然语言 / LLM 为付费 TODO（不接 key）。",
+  ];
+}
+
+
 export const HOME_JOINTS: ArmJoints = {
   base: 0,
   shoulder: -0.35,

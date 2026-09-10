@@ -2,12 +2,16 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   DEMO_COMMANDS,
+  DEFAULT_QUALITY,
+  QUALITY_PROFILES,
+  REEL_ASSET_PATH,
   SCRIPTED_DEMO_SEQUENCE,
   applyAction,
   createInitialWorld,
   evaluateDemoCommandsExecution,
   evaluateDemoCommandsParse,
   fpsMeetsTarget,
+  nextLowerQuality,
   parseCommand,
   runCommand,
   runScriptedDemo,
@@ -143,6 +147,16 @@ describe("robot-arm scripted / acceptance scoring", () => {
   it("fps helper", () => {
     assert.equal(fpsMeetsTarget(30), true);
     assert.equal(fpsMeetsTarget(29), false);
+  });
+
+  it("quality profiles default balanced targets ≥30 path + further degrade", () => {
+    assert.equal(DEFAULT_QUALITY, "balanced");
+    assert.equal(QUALITY_PROFILES.balanced.shadows, false);
+    assert.equal(QUALITY_PROFILES.balanced.contactShadows, false);
+    assert.ok(QUALITY_PROFILES.balanced.dprMax <= 1);
+    assert.equal(nextLowerQuality("balanced"), "low");
+    assert.equal(nextLowerQuality("low"), null);
+    assert.equal(REEL_ASSET_PATH, "/demos/robot-arm/reel.webm");
   });
 
   it("applyAction home keeps held gripper closed", () => {

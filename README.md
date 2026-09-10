@@ -72,6 +72,8 @@ src/
     bottle.png / speaker.png / mug.png
     proxy-fallback.png
     reel.webm                 # ≤20s formal portfolio reel
+  public/demos/robot-arm/
+    reel.webm                 # ≤20s formal portfolio reel
   e2e/
     dod-gate.spec.ts
     material-spheres.spec.ts
@@ -236,10 +238,19 @@ npm run build && npm run test:e2e:turntable
 
 - **10 条固定中文指令**规则映射（抓取左/中/右、放下、放到左/中/右、复位、向左/向右旋转）；**脚本/评分路径抓取·放置成功 ≥7**
 - 失败可读：原因 + 下一步（空指令 / 未知 / 槽位空或占用 / 夹爪已持有）
-- **桌面 ≥30fps** 目标：页内 FPS 计数；R3F 简易 3–4 DOF 运动学臂（无重物理）；不稳定或 &lt;30 时走 **脚本演示** + **LLM API 付费 TODO（不接 key）**
+- **桌面硬门槛 ≥30fps**：页内 **rAF 实测 FPS**（`data-fps` / `data-fps-source="raf"`）；默认 **均衡**画质（关 ContactShadows / 降段数 / dpr≤1）；&lt;30 时 **自动/手动进一步降级** + **脚本演示** + **LLM API 付费 TODO（不接 key）**
+- **正式 ≤20s reel**：[`public/demos/robot-arm/reel.webm`](public/demos/robot-arm/reel.webm)（12s，本地 SVG+ffmpeg，无付费 API）；页内可播放 / 可链接（`reel-asset-video` / `reel-asset-link`）
 - 失败态：加载失败 / 空状态 / 无 WebGL（及 prefers-reduced-motion）可读；`uiFailure=load` 时**卸载 Canvas**
-- 单元测试：`npm run test:robot`；e2e smoke：`npm run test:e2e:robot`
+- 单元测试：`npm run test:robot`；e2e：`npm run test:e2e:robot`（reel 入库 + **FPS≥30**）
 - 默认**无付费 API**；开放域自然语言 / LLM 仅文档 TODO
+
+#### 正式资产
+
+| 资产 | 路径 |
+|------|------|
+| **正式 reel（≤20s）** | [`public/demos/robot-arm/reel.webm`](public/demos/robot-arm/reel.webm) |
+
+再生 reel：`node scripts/generate-robot-arm-reel.mjs`
 
 #### 怎么演示（10 条指令）
 
@@ -262,7 +273,7 @@ npm run build && npm run test:e2e:turntable
 
 4. 输入未知句（如「请帮我泡杯咖啡」）→ 失败横幅含**原因 + 下一步**
 5. 「失败态演示」切 **加载失败** → 横幅 + fallback，**Canvas 不出现**
-6. 观察页顶 **FPS**（目标 ≥30）与规则映射评分
+6. 观察页顶 **FPS**（rAF 实测，硬门槛 ≥30）与画质档；页内预览正式 `reel.webm`
 
 #### 脚本断言（纯函数）
 
@@ -272,20 +283,21 @@ npm run test:robot
 npm test
 ```
 
-核心：`parseCommand` / `applyAction` / `runScriptedDemo` / `evaluateDemoCommandsExecution`（见 `src/lib/robot-arm.ts`）。
+核心：`parseCommand` / `applyAction` / `runScriptedDemo` / `evaluateDemoCommandsExecution` / `QUALITY_PROFILES`（见 `src/lib/robot-arm.ts`）。
 
-#### Playwright smoke（可选）
+#### Playwright / CI 证明（reel + FPS≥30）
 
 ```bash
 npx playwright install chromium
 npm run build && npm run test:e2e:robot
 ```
 
-覆盖：快捷指令成功、未知指令失败可读、脚本演示评分注记、`uiFailure=load` 隐藏 Canvas。
+覆盖：正式 reel 入库与页内可播放/可链接、快捷指令成功、未知指令失败可读、脚本演示评分注记、`uiFailure=load` 隐藏 Canvas、**实测 rAF FPS ≥30**（默认均衡画质）。  
+**CI 证明命令即：`npm run test:e2e:robot`。**
 
 ### Shared
 
-- product-turntable 正式 ≤20s reel 已入库（`reel.webm`）；其余 demo 后续可补  
+- product-turntable / robot-arm 正式 ≤20s reel 均已入库（`reel.webm`）  
 - **移动端无白屏**（layout 深色底 + WebGL / reduced-motion 降级）
 
 ## Paid API TODOs（仅文档，不接 key）
