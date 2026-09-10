@@ -2,7 +2,7 @@
 
 jin kobin 个人站脚手架：**Next.js 15 App Router + TypeScript + Tailwind CSS + R3F/drei + framer-motion**。
 
-深色技术审美。无付费 API、无密钥。**Agent 假完成 DoD 闸门**与**图生材质球墙**已可验收；其余两个 demo 仍为 stub。真实 GLB 角色 / Bloom / DOF / 线上 AI 集成均 **out of scope**。
+深色技术审美。无付费 API、无密钥。**Agent 假完成 DoD 闸门**、**图生材质球墙**与**产品图 3D 转盘**已可验收；robot-arm 仍为 stub。真实 GLB 角色 / Bloom / DOF / 线上 AI 集成均 **out of scope**。
 
 ## 快速运行
 
@@ -36,7 +36,7 @@ src/
     demos/
       agent-dod-gate/          # DoD 闸门（真实交互 · 可验收）
       material-spheres/        # 图生材质球墙（真实交互 · 可验收）
-      product-turntable/
+      product-turntable/       # 产品图 3D 转盘（真实交互 · 可验收）
       robot-arm/
   components/
     layout/Header.tsx          # Home + 4 demos，active state
@@ -50,19 +50,27 @@ src/
       AgentDodGateDemo.tsx     # DoD 闸门交互（无/有闸门）
       MaterialSpheresDemo.tsx  # 材质球墙：上传/样例 + 灯光 + curated 兜底
       MaterialSpheresCanvas*.tsx
+      ProductTurntableDemo.tsx # 转盘：3 产品图 + 代理兜底 + 约 15s 录制
+      ProductTurntableCanvas*.tsx
   lib/
     demos.ts                   # 路由元数据、验收口径
     dod-gate.ts                # assertDod 纯函数 + 假完成用例
     dod-gate.test.ts           # node --test 脚本断言
     material-spheres.ts        # 采样 / PBR 变体 / 灯光预设 / curated
     material-spheres.test.ts
+    product-turntable.ts       # 样例目录 / proxy 启发式 / reel 指引
+    product-turntable.test.ts
   public/demos/material-spheres/
     sample-ref.png
     homepage-ready.png
     texture-pack/          # materials.json + swatches/*.png
+  public/demos/product-turntable/
+    bottle.png / speaker.png / mug.png
+    proxy-fallback.png
   e2e/
     dod-gate.spec.ts
     material-spheres.spec.ts
+    product-turntable.spec.ts
 ```
 
 ## 实现顺序（填实时）
@@ -168,10 +176,51 @@ npm run build && npm run test:e2e:materials
 
 覆盖：灯光切换、精选手调、`uiFailure=load` 隐藏 Canvas。
 
-### product-turntable
+### product-turntable · 可验收
 
-- 3 样例 drag orbit；移动端可用  
-- 不可识别 → proxy + texture fallback  
+- **3 张产品图**（bottle / speaker / mug）驱动转盘贴图；桌面 **drag orbit** 可拖转
+- **移动端可拖**：OrbitControls 单指旋转、双指缩放距离；深色底防白屏；触控 ≥44px
+- **默认无付费**：不接图生 3D key；默认 **代理模 + 产品贴图**
+- **认不出原物 / 白屏风险** → 页内「代理模 + 贴图兜底」或「模拟认不出」强制盒体 + `proxy-fallback.png`（不硬推坏 recon）
+- **约 15s 录制/导出**：Canvas `MediaRecorder` → WebM；不支持时页内有明确系统录屏指引
+- 失败态：加载失败 / 空状态 / 无 WebGL（及 prefers-reduced-motion）可读；`uiFailure=load` 时卸载 Canvas
+- Growth：TTI 提示（挂载→可交互 ms）
+
+#### 正式资产
+
+| 资产 | 路径 |
+|------|------|
+| 水瓶贴图 | [`public/demos/product-turntable/bottle.png`](public/demos/product-turntable/bottle.png) |
+| 音箱贴图 | [`public/demos/product-turntable/speaker.png`](public/demos/product-turntable/speaker.png) |
+| 马克杯贴图 | [`public/demos/product-turntable/mug.png`](public/demos/product-turntable/mug.png) |
+| 代理兜底贴图 | [`public/demos/product-turntable/proxy-fallback.png`](public/demos/product-turntable/proxy-fallback.png) |
+
+再生：`node scripts/generate-product-turntable-assets.mjs`
+
+#### 怎么演示
+
+1. 打开 <http://localhost:3000/demos/product-turntable>
+2. 切换三个产品样例；在画布上拖拽（手机单指）环视；可关/开「自动旋转」
+3. 点「代理模 + 贴图兜底」或「模拟认不出 / 白屏风险」→ 盒体 + fallback 贴图
+4. 点「录制约 15s 并导出」试 WebM；或按页内「约 15s reel 指引」系统录屏
+5. 「失败态演示」切 **加载失败** → 横幅 + fallback，**Canvas 不出现**
+
+#### 脚本断言
+
+```bash
+npm run test:turntable
+# 或一并
+npm test
+```
+
+#### Playwright smoke（可选）
+
+```bash
+npx playwright install chromium
+npm run build && npm run test:e2e:turntable
+```
+
+覆盖：样例切换、代理兜底、坏 recon 模拟、`uiFailure=load` 隐藏 Canvas、reel 指引可见。
 
 ### robot-arm
 
@@ -199,6 +248,7 @@ npm run build && npm run test:e2e:materials
 - 窄屏：导航横滑；demo 单列；触控目标预留  
 - **agent-dod-gate**：加载失败 / 空状态 / 权限 / 超时可切换演示；离线/弱网可读提示；触控 ≥44px  
 - **material-spheres**：加载失败 / 空状态 / 无 WebGL 可切换演示；curated 静态墙兜底；触控 ≥44px  
+- **product-turntable**：加载失败 / 空状态 / 无 WebGL 可切换演示；代理模 + 贴图兜底；约 15s 录制或系统录屏指引；触控拖转 ≥44px  
 
 
 ## Brand

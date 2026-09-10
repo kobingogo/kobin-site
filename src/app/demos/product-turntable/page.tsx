@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DemoStub } from "@/components/demos/DemoStub";
+import { ProductTurntableDemo } from "@/components/demos/ProductTurntableDemo";
 import { DEMOS } from "@/lib/demos";
 
 const demo = DEMOS.find((d) => d.slug === "product-turntable")!;
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function ProductTurntablePage() {
-  return <DemoStub demo={demo} />;
+  return <ProductTurntableDemo />;
 }

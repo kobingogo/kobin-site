@@ -8,11 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "test:dod": "tsx --test src/lib/dod-gate.test.ts",
-    "test": "npm run test:dod && npm run test:materials",
+    "test": "npm run test:dod && npm run test:materials && npm run test:turntable",
     "test:e2e:dod": "playwright test e2e/dod-gate.spec.ts",
-    "test:e2e": "npm run test:e2e:dod && npm run test:e2e:materials",
+    "test:e2e": "npm run test:e2e:dod && npm run test:e2e:materials && npm run test:e2e:turntable",
     "test:materials": "tsx --test src/lib/material-spheres.test.ts",
-    "test:e2e:materials": "playwright test e2e/material-spheres.spec.ts"
+    "test:e2e:materials": "playwright test e2e/material-spheres.spec.ts",
+    "test:turntable": "tsx --test src/lib/product-turntable.test.ts",
+    "test:e2e:turntable": "playwright test e2e/product-turntable.spec.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
