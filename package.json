@@ -8,9 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test:dod": "tsx --test src/lib/dod-gate.test.ts",
-    "test": "npm run test:dod",
+    "test": "npm run test:dod && npm run test:materials",
     "test:e2e:dod": "playwright test e2e/dod-gate.spec.ts",
-    "test:e2e": "npm run test:e2e:dod"
+    "test:e2e": "npm run test:e2e:dod",
+    "test:materials": "tsx --test src/lib/material-spheres.test.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

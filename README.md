@@ -2,7 +2,7 @@
 
 jin kobin 个人站脚手架：**Next.js 15 App Router + TypeScript + Tailwind CSS + R3F/drei + framer-motion**。
 
-深色技术审美。无付费 API、无密钥。**Agent 假完成 DoD 闸门**已可验收交互；其余三个 demo 仍为 stub。真实 GLB 角色 / Bloom / DOF / 线上 AI 集成均 **out of scope**。
+深色技术审美。无付费 API、无密钥。**Agent 假完成 DoD 闸门**与**图生材质球墙**已可验收；其余两个 demo 仍为 stub。真实 GLB 角色 / Bloom / DOF / 线上 AI 集成均 **out of scope**。
 
 ## 快速运行
 
@@ -35,7 +35,7 @@ src/
     page.tsx                   # Home
     demos/
       agent-dod-gate/          # DoD 闸门（真实交互 · 可验收）
-      material-spheres/
+      material-spheres/        # 图生材质球墙（真实交互 · 可验收）
       product-turntable/
       robot-arm/
   components/
@@ -48,10 +48,15 @@ src/
     demos/
       DemoStub.tsx             # 统一 stub：标题/pitch/验收/付费 TODO
       AgentDodGateDemo.tsx     # DoD 闸门交互（无/有闸门）
+      MaterialSpheresDemo.tsx  # 材质球墙：上传/样例 + 灯光 + curated 兜底
+      MaterialSpheresCanvas*.tsx
   lib/
     demos.ts                   # 路由元数据、验收口径
     dod-gate.ts                # assertDod 纯函数 + 假完成用例
     dod-gate.test.ts           # node --test 脚本断言
+    material-spheres.ts        # 采样 / PBR 变体 / 灯光预设 / curated
+    material-spheres.test.ts
+  public/demos/material-spheres/sample-ref.png
 ```
 
 ## 实现顺序（填实时）
@@ -112,11 +117,29 @@ npm run test:e2e:dod
 
 覆盖：有闸门 + partial-complete → 标记完成被拦截；导出 JSON 按钮可点；失败态超时横幅可见。
 
-### material-spheres
+### material-spheres · 可验收
 
-- 1 参考图 → ≥4 材质球 + 灯光切换  
-- 图糊 / 失败 → curated 静态球墙可验收  
-- **TODO（付费）**：图像 / 材质生成 API  
+- 1 参考图（上传或捆绑样例）→ Canvas 采样主色 → ≥4 程序化 PBR 材质球（metalness / roughness / 色相变体）
+- 灯光切换：Studio / Rim / Warm（key / fill / rim / env intensity），拉开材质差异
+- 图糊 / 加载失败 → **精选手调静态墙**（Chrome / Gold / Ceramic / Rubber…）仍可验收
+- 失败态：加载失败 / 空状态 / 无 WebGL（及 prefers-reduced-motion）可读，移动端无白屏
+- **TODO（付费）**：图像 / 材质生成 API（仅文档，不接 key）
+
+#### 怎么演示
+
+1. 打开 <http://localhost:3000/demos/material-spheres>
+2. 默认加载捆绑样例图并生成 ≥4 球；或点「上传参考图」
+3. 切换 **Studio / Rim / Warm** 观察金属 vs 非金属差异
+4. 点「精选手调静态墙」验收 curated 兜底路径
+5. 「失败态演示」切 加载失败 / 空状态 / 无 WebGL → 横幅 + 静态清单可读
+
+#### 脚本断言（纯函数）
+
+```bash
+npm run test:materials
+# 或一并
+npm test
+```
 
 ### product-turntable
 
@@ -148,6 +171,8 @@ npm run test:e2e:dod
 - `prefers-reduced-motion`：关闭 R3F，保留 HTML 层  
 - 窄屏：导航横滑；demo 单列；触控目标预留  
 - **agent-dod-gate**：加载失败 / 空状态 / 权限 / 超时可切换演示；离线/弱网可读提示；触控 ≥44px  
+- **material-spheres**：加载失败 / 空状态 / 无 WebGL 可切换演示；curated 静态墙兜底；触控 ≥44px  
+
 
 ## Brand
 

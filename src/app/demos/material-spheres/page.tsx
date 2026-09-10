@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DemoStub } from "@/components/demos/DemoStub";
+import { MaterialSpheresDemo } from "@/components/demos/MaterialSpheresDemo";
 import { DEMOS } from "@/lib/demos";
 
 const demo = DEMOS.find((d) => d.slug === "material-spheres")!;
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function MaterialSpheresPage() {
-  return <DemoStub demo={demo} />;
+  return <MaterialSpheresDemo />;
 }
