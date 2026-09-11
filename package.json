@@ -8,15 +8,17 @@
     "start": "next start",
     "lint": "eslint",
     "test:dod": "tsx --test src/lib/dod-gate.test.ts",
-    "test": "npm run test:dod && npm run test:materials && npm run test:turntable && npm run test:robot",
+    "test": "npm run test:dod && npm run test:materials && npm run test:turntable && npm run test:robot && npm run test:three",
     "test:e2e:dod": "playwright test e2e/dod-gate.spec.ts",
-    "test:e2e": "npm run test:e2e:dod && npm run test:e2e:materials && npm run test:e2e:turntable && npm run test:e2e:robot",
+    "test:e2e": "npm run test:e2e:dod && npm run test:e2e:materials && npm run test:e2e:turntable && npm run test:e2e:robot && npm run test:e2e:home",
     "test:materials": "tsx --test src/lib/material-spheres.test.ts",
     "test:e2e:materials": "playwright test e2e/material-spheres.spec.ts",
     "test:turntable": "tsx --test src/lib/product-turntable.test.ts",
     "test:e2e:turntable": "playwright test e2e/product-turntable.spec.ts",
     "test:robot": "tsx --test src/lib/robot-arm.test.ts",
-    "test:e2e:robot": "playwright test e2e/robot-arm.spec.ts"
+    "test:e2e:robot": "playwright test e2e/robot-arm.spec.ts",
+    "test:three": "tsx --test src/lib/three/quality.test.ts src/lib/three/timeline.test.ts src/lib/three/assets.test.ts src/lib/hero-timeline.test.ts",
+    "test:e2e:home": "playwright test e2e/home-hero.spec.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
