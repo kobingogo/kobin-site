@@ -11,7 +11,6 @@ import { useFrame } from "@react-three/fiber";
 import {
   Component,
   useRef,
-  type ErrorInfo,
   type MutableRefObject,
   type ReactNode,
 } from "react";
@@ -41,7 +40,7 @@ class PostFXBoundary extends Component<
   static getDerivedStateFromError() {
     return { failed: true };
   }
-  componentDidCatch(error: Error, _info: ErrorInfo) {
+  componentDidCatch(error: Error) {
     console.warn(
       "[three/PostFX] effect chain failed; rendering without post-processing",
       error,
