@@ -338,6 +338,7 @@ npm run build && npm run test:e2e:robot
   - high 档稳态 31–39fps（≥30 门槛）；截图 stall 触发过一次 high→balanced 降档，属 QualityGuard 预期行为（单向不升档）
   - 鼠标视差满行程背景摆幅 ≈45 CSS px，核心保持构图中心（sen 式 orbit-around-focus + 残余 tilt，故意强于「几像素」的计划文案）
   - 移动端 375×812：high 档 96fps、无横向溢出、颗粒在中间调可见；reduced-motion / 无 WebGL：0 canvas + 静态渐变兜底 + 降级文案，页面完整
+  - 已知取舍：`antialias:false`（high/balanced 由 SMAA 接管）；tier=low 无后处理故细线无抗锯齿——该档是软渲染/老设备兜底，开 MSAA 会威胁 headless e2e 的 FPS 门禁，故不翻
 
 ## Paid API TODOs（仅文档，不接 key）
 
