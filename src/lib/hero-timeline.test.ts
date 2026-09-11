@@ -38,4 +38,9 @@ describe("hero timeline data (W1 procedural)", () => {
         HERO_TIMELINE_CONFIG.parallaxDeg <= 5,
     );
   });
+
+  it("keys[i+1] parks at anchors[i] (positional contract)", () => {
+    assert.equal(HERO_KEYS[0].id, "hero");
+    HERO_ANCHORS.forEach((a, i) => assert.equal(HERO_KEYS[i + 1].id, a));
+  });
 });
