@@ -1,49 +1,33 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, type MutableRefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { CameraTimeline } from "@/components/three/CameraTimeline";
+import { LightRig } from "@/components/three/LightRig";
+import {
+  HERO_ANCHORS,
+  HERO_KEYS,
+  HERO_TIMELINE_CONFIG,
+} from "@/lib/hero-timeline";
 
 type HeroSceneProps = {
-  /** 0–1 scroll progress; drives sen-style camera scrub (procedural stand-in for baked CameraAction GLB) */
+  /** 0–1 scroll progress; drives ambient object motion (camera is owned by CameraTimeline). */
   scrollProgress: number;
+  /** Shared DoF autofocus target, written by CameraTimeline each frame. */
+  focusRef: MutableRefObject<THREE.Vector3>;
 };
-
-/** Keyframed camera path — scroll scrub replaces future CameraAction GLB bake */
-const CAM_KEYS = [
-  { p: 0, pos: new THREE.Vector3(0.15, 0.55, 5.4), look: new THREE.Vector3(0, 0.05, 0) },
-  { p: 0.28, pos: new THREE.Vector3(1.35, 0.95, 3.9), look: new THREE.Vector3(0.1, 0.15, 0) },
-  { p: 0.55, pos: new THREE.Vector3(-0.85, 1.45, 2.85), look: new THREE.Vector3(0, 0.25, -0.1) },
-  { p: 0.82, pos: new THREE.Vector3(0.55, 2.05, 2.15), look: new THREE.Vector3(0, 0.35, 0) },
-  { p: 1, pos: new THREE.Vector3(0.05, 2.55, 1.55), look: new THREE.Vector3(0, 0.45, 0.05) },
-] as const;
-
-function scrubCamera(progress: number, outPos: THREE.Vector3, outLook: THREE.Vector3) {
-  const t = THREE.MathUtils.clamp(progress, 0, 1);
-  let i = 0;
-  while (i < CAM_KEYS.length - 2 && CAM_KEYS[i + 1].p < t) i += 1;
-  const a = CAM_KEYS[i];
-  const b = CAM_KEYS[i + 1];
-  const u = (t - a.p) / Math.max(1e-6, b.p - a.p);
-  const s = u * u * (3 - 2 * u); // smoothstep
-  outPos.lerpVectors(a.pos, b.pos, s);
-  outLook.lerpVectors(a.look, b.look, s);
-}
 
 /**
  * Dark-tech procedural hero: geo rings + low-poly core + sparse particles.
- * Bloom/DOF / real character / heavy GLB are out of scope.
- *
- * FUTURE BAKE: replace scrubCamera path with sen-style CameraAction GLB;
- * keep scrollProgress as the scrub driver.
+ * Lighting via shared LightRig(tech); camera via shared CameraTimeline
+ * (dwell-parked stations anchored to the content sections).
+ * W2 replaces HERO_KEYS with the home-world.glb CameraAction track.
  */
-export function HeroScene({ scrollProgress }: HeroSceneProps) {
+export function HeroScene({ scrollProgress, focusRef }: HeroSceneProps) {
   const core = useRef<THREE.Group>(null);
   const rings = useRef<THREE.Group>(null);
   const particles = useRef<THREE.Points>(null);
-  const targetPos = useMemo(() => new THREE.Vector3(), []);
-  const targetLook = useMemo(() => new THREE.Vector3(), []);
-  const lookCurrent = useMemo(() => new THREE.Vector3(0, 0.05, 0), []);
 
   const positions = useMemo(() => {
     const count = 360;
@@ -59,7 +43,7 @@ export function HeroScene({ scrollProgress }: HeroSceneProps) {
     return arr;
   }, []);
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     const t = state.clock.elapsedTime;
     const p = scrollProgress;
 
@@ -74,20 +58,14 @@ export function HeroScene({ scrollProgress }: HeroSceneProps) {
     if (particles.current) {
       particles.current.rotation.y = t * 0.03;
     }
-
-    scrubCamera(p, targetPos, targetLook);
-    const cam = state.camera;
-    cam.position.x = THREE.MathUtils.damp(cam.position.x, targetPos.x, 5, delta);
-    cam.position.y = THREE.MathUtils.damp(cam.position.y, targetPos.y, 5, delta);
-    cam.position.z = THREE.MathUtils.damp(cam.position.z, targetPos.z, 5, delta);
-    lookCurrent.x = THREE.MathUtils.damp(lookCurrent.x, targetLook.x, 5, delta);
-    lookCurrent.y = THREE.MathUtils.damp(lookCurrent.y, targetLook.y, 5, delta);
-    lookCurrent.z = THREE.MathUtils.damp(lookCurrent.z, targetLook.z, 5, delta);
-    cam.lookAt(lookCurrent);
   });
 
   return (
     <>
+      {/* Opaque bg: EffectComposer on alpha canvases has black-artifact pitfalls; page bg is the same #020617 */}
+      <color attach="background" args={["#020617"]} />
+      <LightRig preset="tech" />
+
       <group ref={core}>
         <mesh>
           <icosahedronGeometry args={[1.02, 1]} />
@@ -129,10 +107,7 @@ export function HeroScene({ scrollProgress }: HeroSceneProps) {
       </group>
 
       {/* Restrained floor grid — dark tech, low contrast */}
-      <gridHelper
-        args={[10, 20, "#0e7490", "#0f172a"]}
-        position={[0, -1.35, 0]}
-      />
+      <gridHelper args={[10, 20, "#0e7490", "#0f172a"]} position={[0, -1.35, 0]} />
 
       <points ref={particles}>
         <bufferGeometry>
@@ -148,10 +123,12 @@ export function HeroScene({ scrollProgress }: HeroSceneProps) {
         />
       </points>
 
-      <ambientLight intensity={0.28} />
-      <directionalLight position={[4, 6, 2]} intensity={0.95} color="#e0f2fe" />
-      <pointLight position={[-3.2, -1.5, -2]} intensity={0.45} color="#818cf8" />
-      <pointLight position={[2.5, 2.2, 1.5]} intensity={0.25} color="#22d3ee" />
+      <CameraTimeline
+        keys={HERO_KEYS}
+        anchors={[...HERO_ANCHORS]}
+        focusRef={focusRef}
+        {...HERO_TIMELINE_CONFIG}
+      />
     </>
   );
 }

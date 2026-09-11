@@ -6,6 +6,7 @@ import Link from "next/link";
 import { DEMOS } from "@/lib/demos";
 import { COPY } from "@/lib/copy";
 import { HeroCanvasDynamic } from "./HeroCanvasDynamic";
+import { GrainOverlay } from "@/components/three/GrainOverlay";
 
 function useWebGLSupport() {
   const [ok, setOk] = useState(true);
@@ -54,6 +55,8 @@ export function HomeExperience() {
           className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(2,6,23,0.35)_55%,rgba(2,6,23,0.72)_100%)]"
         />
       </div>
+
+      {canvasEnabled && <GrainOverlay opacity={0.35} />}
 
       <div className="relative z-10">
         <section className="flex min-h-[88vh] flex-col justify-end px-4 pb-16 pt-24 sm:justify-center sm:pb-24">
@@ -116,6 +119,7 @@ export function HomeExperience() {
 
         <section
           id="about"
+          data-point="about"
           className="border-t border-white/5 bg-slate-950/80 px-4 py-16 backdrop-blur-md sm:py-20"
         >
           <div className="mx-auto max-w-6xl">
@@ -130,6 +134,7 @@ export function HomeExperience() {
 
         <section
           id="works"
+          data-point="works"
           className="border-t border-white/5 bg-black/75 px-4 py-16 backdrop-blur-md sm:py-20"
         >
           <div className="mx-auto max-w-6xl">
@@ -181,6 +186,7 @@ export function HomeExperience() {
 
         <section
           id="contact"
+          data-point="contact"
           className="border-t border-white/5 bg-slate-950/90 px-4 py-16 backdrop-blur-md sm:py-20"
         >
           <div className="mx-auto max-w-6xl">
