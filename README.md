@@ -2,7 +2,7 @@
 
 jin kobin 个人站脚手架：**Next.js 15 App Router + TypeScript + Tailwind CSS + R3F/drei + framer-motion**。
 
-深色技术审美。无付费 API、无密钥。**Agent 假完成 DoD 闸门**、**图生材质球墙**、**产品图 3D 转盘**与**自然语言机械臂仿真**已可验收。真实 GLB 角色 / Bloom / DOF / 线上 AI 集成均 **out of scope**。
+深色技术审美。无付费 API、无密钥。**Agent 假完成 DoD 闸门**、**图生材质球墙**、**产品图 3D 转盘**与**自然语言机械臂仿真**已可验收；首页为**电影感一镜到底**滚动相机（共享 3D 基建 W1：Bloom / DoF / 胶片颗粒）。真实 GLB 角色 / 线上 AI 集成均 **out of scope**。
 
 ## 快速运行
 
@@ -40,11 +40,19 @@ src/
       robot-arm/               # 自然语言机械臂仿真（真实交互 · 可验收）
   components/
     layout/Header.tsx          # Home + 4 demos，active state
+    three/                     # 共享 3D 基建（W1，业务无关）
+      LightRig.tsx             # studio/rim/tech 光照预设（可选自托管 HDR）
+      PostFX.tsx               # DoF 自动对焦 + Bloom + SMAA（按档静默降级）
+      CameraTimeline.tsx       # 滚动刷帧相机：data-point 锚点 → dwell → 阻尼 + 鼠标视差
+      QualityGuard.tsx         # rAF FPS 采样，持续 <30fps 单向降档
+      GrainOverlay.tsx         # 1fps demand Canvas 胶片颗粒（multiply）
+      LoadingVeil.tsx          # 单调峰值进度环（W2 挂载）
+      useGlbScene.ts           # 注册表驱动 GLB 加载（W2/W3 消费）
     home/
       HeroCanvasDynamic.tsx    # dynamic import ssr:false
-      HeroCanvas.tsx           # 全屏固定 R3F Canvas
-      HeroScene.tsx            # 粒子/低多边形；camera scrub 注释 bake 接入点
-      HomeExperience.tsx       # 滚动层 About / Works / Contact + 降级
+      HeroCanvas.tsx           # 全屏固定 R3F Canvas + tier/fps 遥测属性
+      HeroScene.tsx            # 粒子/低多边形；相机由 CameraTimeline 接管
+      HomeExperience.tsx       # 滚动层 About / Works / Contact + data-point 锚点 + 降级
     demos/
       DemoStub.tsx             # 统一 stub：标题/pitch/验收/付费 TODO
       AgentDodGateDemo.tsx     # DoD 闸门交互（无/有闸门）
@@ -64,6 +72,15 @@ src/
     product-turntable.test.ts
     robot-arm.ts               # 中文规则映射 / 世界状态 / 脚本序列
     robot-arm.test.ts
+    hero-timeline.ts           # 首页 4 站相机键 + timeline 配置
+    hero-timeline.test.ts
+    three/
+      quality.ts               # 渲染分档 / 单向降档纯函数
+      quality.test.ts
+      timeline.ts              # dwell 重映射 / stationIndex / sampleKeys
+      timeline.test.ts
+      assets.ts                # GLB 资产注册表（W2/W3 消费）
+      assets.test.ts
   public/demos/material-spheres/
     sample-ref.png
     homepage-ready.png
@@ -76,6 +93,7 @@ src/
     reel.webm                 # ≤20s formal portfolio reel
   e2e/
     dod-gate.spec.ts
+    home-hero.spec.ts
     material-spheres.spec.ts
     product-turntable.spec.ts
     robot-arm.spec.ts
@@ -299,6 +317,27 @@ npm run build && npm run test:e2e:robot
 
 - product-turntable / robot-arm 正式 ≤20s reel 均已入库（`reel.webm`）  
 - **移动端无白屏**（layout 深色底 + WebGL / reduced-motion 降级）
+
+## 共享 3D 基建（W1）
+
+- `src/components/three/`：业务无关共享层
+  - `LightRig`（studio/rim/tech 光照预设，可选自托管 HDR）
+  - `PostFX`（DoF 自动对焦 + Bloom + SMAA，可选暗角；老设备静默降级）
+  - `CameraTimeline`（滚动刷帧相机引擎：DOM data-point 锚点 → dwell 驻留 → 阻尼；鼠标绕焦点视差）
+  - `QualityGuard`（rAF FPS 采样，持续 <30fps 自动降档，单向不升档）
+  - `GrainOverlay`（1fps demand Canvas 胶片颗粒，multiply 混合）
+  - `LoadingVeil`（单调峰值进度环；无异步资产时不渲染）
+  - `useGlbScene`（注册表驱动的 GLB 加载，W2/W3 消费）
+- `src/lib/three/`：纯逻辑（quality 分档 / timeline 数学 / assets 注册表），node:test 覆盖
+- 分档：high（dpr≤2+全后处理）/ balanced（dpr≤1.5，DoF 关）/ low（dpr 1，无后处理）
+- 首页证据：`data-testid="hero-canvas"` 的 data-tier / data-fps-source="raf" / data-fps-meets
+- 验证命令：`npm run test:three`、`npm run test:e2e:home`
+- W1 视觉参数（Task 15 实测后**未调改**）：Bloom intensity 0.7 / luminanceThreshold 0.45；Grain opacity 0.35
+- 视觉验收记录（2026-09-11 · 真机 Chrome · Apple M1 Pro Metal · 1280×800）：
+  - hero / about / works / contact 四站均驻留；contact 段 `min-h-[75vh]` 保证末站锚点能越过 30% 参考线（否则连续索引停在 1.74/2，末站不驻留）
+  - high 档稳态 31–39fps（≥30 门槛）；截图 stall 触发过一次 high→balanced 降档，属 QualityGuard 预期行为（单向不升档）
+  - 鼠标视差满行程背景摆幅 ≈45 CSS px，核心保持构图中心（sen 式 orbit-around-focus + 残余 tilt，故意强于「几像素」的计划文案）
+  - 移动端 375×812：high 档 96fps、无横向溢出、颗粒在中间调可见；reduced-motion / 无 WebGL：0 canvas + 静态渐变兜底 + 降级文案，页面完整
 
 ## Paid API TODOs（仅文档，不接 key）
 

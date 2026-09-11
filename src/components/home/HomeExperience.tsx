@@ -187,7 +187,7 @@ export function HomeExperience() {
         <section
           id="contact"
           data-point="contact"
-          className="border-t border-white/5 bg-slate-950/90 px-4 py-16 backdrop-blur-md sm:py-20"
+          className="flex min-h-[75vh] flex-col justify-center border-t border-white/5 bg-slate-950/90 px-4 py-16 backdrop-blur-md sm:py-20"
         >
           <div className="mx-auto max-w-6xl">
             <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-cyan-300/90">
