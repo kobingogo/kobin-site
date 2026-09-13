@@ -36,6 +36,16 @@ export function QualityGuard({
   const badStreak = useRef(0);
   const setDpr = useThree((s) => s.setDpr);
 
+  useEffect(() => {
+    const reset = () => {
+      windowStart.current = 0;
+      frames.current = 0;
+      badStreak.current = 0;
+    };
+    document.addEventListener("visibilitychange", reset);
+    return () => document.removeEventListener("visibilitychange", reset);
+  }, []);
+
   // Clamp dpr to the tier budget whenever the tier changes (incl. initial mount)
   useEffect(() => {
     const deviceDpr =
@@ -44,6 +54,7 @@ export function QualityGuard({
   }, [tier, setDpr]);
 
   useFrame(() => {
+    if (document.hidden) return;
     const now =
       typeof performance !== "undefined" ? performance.now() : Date.now();
     if (windowStart.current === 0) {

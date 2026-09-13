@@ -22,7 +22,7 @@ export type PostFXProps = {
   tier: RenderQuality;
   /** World-space autofocus target, written per-frame by CameraTimeline */
   focusRef?: MutableRefObject<THREE.Vector3>;
-  dof?: { bokehScale?: number; focusRange?: number };
+  dof?: { bokehScale?: number; focusRange?: number } | false;
   bloom?: { intensity?: number; luminanceThreshold?: number };
   /** GLSL vignette — keep off where a DOM readability vignette already exists */
   vignette?: boolean;
@@ -60,7 +60,7 @@ export function PostFX({
 }: PostFXProps) {
   const spec = TIERS[tier];
   const dofRef = useRef<DepthOfFieldEffect | null>(null);
-  const d = { ...DEFAULT_DOF, ...dof };
+  const d = dof === false ? DEFAULT_DOF : { ...DEFAULT_DOF, ...dof };
   const b = { ...DEFAULT_BLOOM, ...bloom };
 
   useFrame(() => {
@@ -77,7 +77,7 @@ export function PostFX({
   return (
     <PostFXBoundary>
       <EffectComposer multisampling={0} stencilBuffer={false} depthBuffer>
-        {spec.dof ? (
+        {spec.dof && dof !== false ? (
           <DepthOfField
             ref={dofRef}
             target={[0, 0.05, 0]}

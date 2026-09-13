@@ -7,6 +7,8 @@ import { NAV_LINKS } from "@/lib/demos";
 export function Header() {
   const pathname = usePathname();
 
+  if (pathname === "/") return null;
+
   return (
     <header className="sticky top-0 z-50 border-b border-cyan-500/20 bg-black/70 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">

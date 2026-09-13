@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  ASSETS,
   budgetSlack,
   getAsset,
   withinBudget,
@@ -17,12 +16,23 @@ const entry: AssetEntry = {
 };
 
 describe("three/assets registry", () => {
-  it("W1 registry starts empty (populated by W2/W3)", () => {
-    assert.equal(ASSETS.length, 0);
+  it("registers all exterior LODs with meshopt budgets", () => {
+    const expected = [
+      ["orbital-lab-exterior-lod0", 8],
+      ["orbital-lab-exterior-lod1", 4],
+      ["orbital-lab-exterior-lod2", 2],
+    ] as const;
+
+    for (const [id, budgetMb] of expected) {
+      const station = getAsset(id);
+      assert.ok(station);
+      assert.equal(station.compression, "meshopt");
+      assert.equal(station.budgetBytes, budgetMb * 1024 * 1024);
+    }
   });
 
   it("getAsset resolves registered ids only", () => {
-    assert.equal(getAsset("test-world"), undefined);
+    assert.equal(getAsset("missing-world"), undefined);
   });
 
   it("withinBudget: at/under budget passes, empty or over fails", () => {

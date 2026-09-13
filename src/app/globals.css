@@ -51,3 +51,266 @@ body {
   background: var(--panel);
   backdrop-filter: blur(10px);
 }
+
+.scene-panel-shell {
+  border-left: 1px solid rgba(103, 232, 249, 0.45);
+  border-top: 1px solid rgba(103, 232, 249, 0.12);
+  background: linear-gradient(105deg, #020b18 0%, #020814 72%, #030711 100%);
+  box-shadow: -18px 0 45px rgba(0, 0, 0, 0.35), 0 18px 60px rgba(0, 4, 12, 0.16);
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+}
+
+.orbital-home-copy {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.8);
+}
+
+.orbital-home-title {
+  text-wrap: balance;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.62), 0 0 42px rgba(0, 8, 18, 0.36);
+}
+
+.orbital-entry:hover > span:first-child {
+  width: 3.5rem;
+  background: rgba(207, 250, 254, 0.92);
+}
+
+.orbital-nav {
+  background: linear-gradient(90deg, transparent, rgba(0, 6, 16, 0.3), transparent);
+  text-shadow: 0 1px 12px #000;
+}
+
+.orbital-nav::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 7%;
+  right: 7%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.24), transparent);
+}
+
+.orbital-nav__signal {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: transparent;
+  transform: translateX(-50%);
+  transition: background-color 240ms ease, box-shadow 240ms ease;
+}
+
+.orbital-nav__signal--active {
+  background: #67e8f9;
+  box-shadow: 0 0 8px #22d3ee, 0 0 20px rgba(34, 211, 238, 0.5);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .orbital-home-copy > div {
+    animation: orbital-copy-arrival 1.2s 2.75s cubic-bezier(0.2, 0.72, 0.2, 1) both;
+  }
+
+  .orbital-nav {
+    animation: orbital-nav-arrival 900ms 3.35s ease-out both;
+  }
+}
+
+@keyframes orbital-copy-arrival {
+  from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes orbital-nav-arrival {
+  from { opacity: 0; filter: blur(3px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+@media (max-width: 639px) {
+  .orbital-brand {
+    width: 10.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .orbital-home-copy {
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.88);
+  }
+
+  .orbital-status {
+    display: none;
+  }
+}
+
+.eclipse-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 72% 43%, transparent 0 13%, rgba(0, 4, 12, 0.08) 28%, rgba(0, 0, 5, 0.48) 100%);
+  opacity: 0;
+  transition: opacity 900ms ease;
+}
+
+.eclipse-vignette--active {
+  opacity: 1;
+}
+
+/* Orbital targeting cursor — desktop only; touch keeps its native behavior. */
+.space-cursor,
+.space-cursor-trail {
+  display: none;
+}
+
+@media (pointer: fine) {
+  [data-space-cursor-scope],
+  [data-space-cursor-scope] * {
+    cursor: none !important;
+  }
+
+  .space-cursor,
+  .space-cursor-trail {
+    display: block;
+    pointer-events: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    opacity: 0;
+    will-change: transform;
+  }
+
+  .space-cursor[data-visible="true"],
+  .space-cursor-trail[data-visible="true"] {
+    opacity: 1;
+  }
+
+  .space-cursor {
+    transition: opacity 160ms ease;
+  }
+
+  .space-cursor-trail {
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    border-radius: 50%;
+    background: #d9f8ff;
+    box-shadow: 0 0 7px #67e8f9, 0 0 16px rgba(34, 211, 238, 0.65);
+    transition: opacity 220ms ease;
+  }
+
+  .space-cursor__reticle {
+    position: absolute;
+    left: -19px;
+    top: -19px;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(103, 232, 249, 0.32);
+    border-radius: 50%;
+    box-shadow: inset 0 0 8px rgba(34, 211, 238, 0.08), 0 0 10px rgba(34, 211, 238, 0.1);
+    transition: border-color 180ms ease, transform 180ms ease, width 180ms ease, height 180ms ease, left 180ms ease, top 180ms ease;
+  }
+
+  .space-cursor__reticle::before,
+  .space-cursor__reticle::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    background: rgba(125, 235, 255, 0.72);
+  }
+
+  .space-cursor__reticle::before {
+    width: 50px;
+    height: 1px;
+    transform: translate(-50%, -0.5px);
+    background: linear-gradient(90deg, currentColor 0 8px, transparent 8px calc(100% - 8px), currentColor calc(100% - 8px));
+  }
+
+  .space-cursor__reticle::after {
+    width: 1px;
+    height: 50px;
+    transform: translate(-0.5px, -50%);
+    background: linear-gradient(180deg, currentColor 0 8px, transparent 8px calc(100% - 8px), currentColor calc(100% - 8px));
+  }
+
+  .space-cursor__arc {
+    position: absolute;
+    inset: -4px;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    animation: cursor-orbit-spin 5.5s linear infinite;
+  }
+
+  .space-cursor__arc--a {
+    border-top-color: #67e8f9;
+    border-right-color: rgba(103, 232, 249, 0.16);
+  }
+
+  .space-cursor__arc--b {
+    inset: 4px;
+    border-bottom-color: rgba(251, 191, 36, 0.75);
+    animation-direction: reverse;
+    animation-duration: 3.2s;
+  }
+
+  .space-cursor__dot {
+    position: absolute;
+    left: -1.5px;
+    top: -1.5px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #effcff;
+    box-shadow: 0 0 9px #67e8f9;
+  }
+
+  .space-cursor__label {
+    position: absolute;
+    left: 27px;
+    top: 17px;
+    color: rgba(165, 243, 252, 0.72);
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 7px;
+    letter-spacing: 0.18em;
+    line-height: 1;
+  }
+
+  .space-cursor[data-mode="lock"] .space-cursor__reticle {
+    left: -23px;
+    top: -23px;
+    width: 46px;
+    height: 46px;
+    border-color: rgba(251, 191, 36, 0.62);
+    transform: rotate(45deg);
+  }
+
+  .space-cursor[data-mode="lock"] .space-cursor__dot {
+    background: #fcd34d;
+    box-shadow: 0 0 10px #f59e0b;
+  }
+
+  .space-cursor[data-mode="lock"] .space-cursor__label {
+    color: rgba(253, 230, 138, 0.9);
+  }
+
+  .space-cursor[data-mode="drag"] .space-cursor__reticle,
+  .space-cursor[data-pressed="true"] .space-cursor__reticle {
+    transform: scale(0.72) rotate(90deg);
+    border-color: rgba(103, 232, 249, 0.82);
+  }
+
+  @keyframes cursor-orbit-spin {
+    to { transform: rotate(360deg); }
+  }
+}
+
+@media (pointer: fine) and (prefers-reduced-motion: reduce) {
+  .space-cursor__arc {
+    animation: none;
+  }
+}

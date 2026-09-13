@@ -1,9 +1,8 @@
 import type { TimelineKey } from "@/lib/three/timeline";
 
 /**
- * W1 procedural hero camera — station keys mirroring the wave1 hand-tuned
- * CAM_KEYS, plus per-station DoF focus points. W2 replaces this with the
- * home-world.glb CameraAction track (same scroll pipeline, new key source).
+ * Exterior camera stations. The opening composition leaves copy space on the
+ * left while later keys orbit the orbital lab without exposing weak angles.
  */
 
 /** DOM `data-point` anchors, in document order (keys.length = anchors.length + 1). */
@@ -12,27 +11,27 @@ export const HERO_ANCHORS = ["about", "works", "contact"] as const;
 export const HERO_KEYS: TimelineKey[] = [
   {
     id: "hero",
-    pos: [0.15, 0.55, 5.4],
-    look: [0, 0.05, 0],
-    focus: [0, 0.05, 0],
+    pos: [0, 0.25, 7.2],
+    look: [0.45, 0.22, 0],
+    focus: [1.4, 0.5, 0],
   },
   {
     id: "about",
-    pos: [1.35, 0.95, 3.9],
-    look: [0.1, 0.15, 0],
-    focus: [0, 0.1, 0],
+    pos: [0.72, 0.68, 6.25],
+    look: [0.92, 0.3, 0],
+    focus: [1.35, 0.52, 0],
   },
   {
     id: "works",
-    pos: [-0.85, 1.45, 2.85],
-    look: [0, 0.25, -0.1],
-    focus: [0, 0.2, -0.05],
+    pos: [-0.62, 1.28, 5.45],
+    look: [1.1, 0.38, -0.08],
+    focus: [1.32, 0.54, -0.08],
   },
   {
     id: "contact",
-    pos: [0.05, 2.55, 1.55],
-    look: [0, 0.45, 0.05],
-    focus: [0, 0.35, 0],
+    pos: [0.18, 2.08, 5.95],
+    look: [0.8, 0.42, 0.05],
+    focus: [0.8, 0.42, 0.05],
   },
 ];
 
@@ -40,6 +39,6 @@ export const HERO_TIMELINE_CONFIG = {
   refLineFrac: 0.3,
   dwell: 0.25,
   damping: 4,
-  parallaxDeg: 1.6,
+  parallaxDeg: 1.9,
   parallaxEase: 0.08,
 } as const;

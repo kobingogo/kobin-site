@@ -15,10 +15,35 @@ export type AssetEntry = {
 };
 
 /**
- * W1: intentionally empty. W2 registers home-world (≤8MB Draco);
- * W3 registers demo models after license verification (oss-picker).
+ * Public runtime assets. Source models remain under src/assets/models and are
+ * never fetched by the browser.
  */
-export const ASSETS: readonly AssetEntry[] = [];
+export const ASSETS: readonly AssetEntry[] = [
+  {
+    id: "orbital-lab-exterior-lod0",
+    url: "/assets/exterior/orbital-lab-lod0.glb",
+    budgetBytes: 8 * 1024 * 1024,
+    compression: "meshopt",
+    license: "self-made from user-provided Hunyuan generation; Blender optimized",
+    source: "src/assets/models/orbital-lab-exterior-source.glb",
+  },
+  {
+    id: "orbital-lab-exterior-lod1",
+    url: "/assets/exterior/orbital-lab-lod1.glb",
+    budgetBytes: 4 * 1024 * 1024,
+    compression: "meshopt",
+    license: "self-made from user-provided Hunyuan generation; Blender optimized",
+    source: "src/assets/models/orbital-lab-exterior-source.glb",
+  },
+  {
+    id: "orbital-lab-exterior-lod2",
+    url: "/assets/exterior/orbital-lab-lod2.glb",
+    budgetBytes: 2 * 1024 * 1024,
+    compression: "meshopt",
+    license: "self-made from user-provided Hunyuan generation; Blender optimized",
+    source: "src/assets/models/orbital-lab-exterior-source.glb",
+  },
+];
 
 export function getAsset(id: string): AssetEntry | undefined {
   return ASSETS.find((a) => a.id === id);
