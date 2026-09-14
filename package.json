@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:e2e": "NEXT_DIST_DIR=.next-e2e next build",
     "start": "next start",
+    "start:e2e": "NEXT_DIST_DIR=.next-e2e next start -p 3100",
     "lint": "eslint",
     "test:dod": "tsx --test src/lib/dod-gate.test.ts",
     "test": "npm run test:dod && npm run test:materials && npm run test:turntable && npm run test:robot && npm run test:three",
@@ -17,7 +19,7 @@
     "test:e2e:turntable": "playwright test e2e/product-turntable.spec.ts",
     "test:robot": "tsx --test src/lib/robot-arm.test.ts",
     "test:e2e:robot": "playwright test e2e/robot-arm.spec.ts",
-    "test:three": "tsx --test src/lib/three/quality.test.ts src/lib/three/timeline.test.ts src/lib/three/assets.test.ts src/lib/hero-timeline.test.ts",
+    "test:three": "tsx --test src/lib/three/quality.test.ts src/lib/three/timeline.test.ts src/lib/three/assets.test.ts src/lib/hero-timeline.test.ts src/lib/experience-flow.test.ts",
     "test:e2e:home": "playwright test e2e/home-hero.spec.ts"
   },
   "dependencies": {

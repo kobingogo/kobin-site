@@ -21,10 +21,12 @@ const MOBILE_POSES: Record<SceneView, { position: [number, number, number]; look
 
 export function SceneCamera({
   view,
+  entryActive = false,
   reducedMotion = false,
   onEclipseAlign,
 }: {
   view: SceneView;
+  entryActive?: boolean;
   reducedMotion?: boolean;
   onEclipseAlign?: () => void;
 }) {
@@ -118,6 +120,16 @@ export function SceneCamera({
   useFrame((state, delta) => {
     elapsed.current += Math.min(delta, 0.1);
     const pose = (mobile ? MOBILE_POSES : DESKTOP_POSES)[view];
+    if (entryActive) {
+      target.set(mobile ? 2.05 : 3.35, mobile ? 1.1 : -0.28, 2.2);
+      look.current.set(mobile ? 2.08 : 3.45, mobile ? 1.05 : -0.35, -0.45);
+      state.camera.position.lerp(
+        target,
+        reducedMotion ? 1 : 1 - Math.exp(-Math.min(delta, 0.1) * 2.8),
+      );
+      state.camera.lookAt(look.current);
+      return;
+    }
     const progress = reducedMotion ? 1 : THREE.MathUtils.clamp((elapsed.current - 0.35) / 4.6, 0, 1);
     const approach = 1 - progress * progress * (3 - 2 * progress);
     const parallax = reducedMotion ? 0 : mobile ? 0.015 : 0.055;
@@ -133,7 +145,7 @@ export function SceneCamera({
     if (elapsed.current < 0.15 && !reducedMotion) state.camera.position.copy(target);
     state.camera.position.lerp(target, reducedMotion ? 1 : 1 - Math.exp(-Math.min(delta, 0.1) * 2.4));
     state.camera.lookAt(look.current);
-    const eclipseAligned = !mobile && view === "home" && orbit.current.x > 0.36 && Math.abs(orbit.current.y) < 0.16;
+    const eclipseAligned = !entryActive && !mobile && view === "home" && orbit.current.x > 0.36 && Math.abs(orbit.current.y) < 0.16;
     if (eclipseAligned && !aligned.current) onEclipseAlign?.();
     aligned.current = eclipseAligned;
   });

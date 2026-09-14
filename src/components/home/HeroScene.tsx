@@ -10,6 +10,7 @@ type HeroSceneProps = {
   activationCount: number;
   hoveredProject: number | null;
   eclipseActive: boolean;
+  entryActive?: boolean;
   reducedMotion?: boolean;
   onReady?: () => void;
   onActivate?: () => void;
@@ -24,6 +25,7 @@ export function HeroScene({
   activationCount,
   hoveredProject,
   eclipseActive,
+  entryActive = false,
   reducedMotion,
   onReady,
   onActivate,
@@ -37,6 +39,7 @@ export function HeroScene({
       activationCount={activationCount}
       hoveredProject={hoveredProject}
       eclipseActive={eclipseActive}
+      entryActive={entryActive}
       reducedMotion={reducedMotion}
       onReady={onReady}
       onActivate={onActivate}

@@ -1,8 +1,10 @@
 # KobinFlow · kobin-site
 
-jin kobin 个人站脚手架：**Next.js 15 App Router + TypeScript + Tailwind CSS + R3F/drei + framer-motion**。
+jin kobin 个人站：**Next.js 15 App Router + TypeScript + Tailwind CSS + R3F/drei + framer-motion**。
 
-深色技术审美。无付费 API、无密钥。**Agent 假完成 DoD 闸门**、**图生材质球墙**、**产品图 3D 转盘**与**自然语言机械臂仿真**已可验收；首页为**电影感一镜到底**滚动相机（共享 3D 基建 W1：Bloom / DoF / 胶片颗粒）。真实 GLB 角色 / 线上 AI 集成均 **out of scope**。
+网站采用“轨道验证实验室”叙事：访客从太空总览靠近空间站，经过气闸进入舱内，由小 K 选择推荐导览、直接看作品或自主导航，再访问四个可验收实验和通讯台。外景、气闸、小 K 与全息终端均使用经过 Web 优化的真实 GLB；无付费 API、无密钥。
+
+完整交互图、状态映射与 8.5 分验收门槛见 [`docs/orbital-lab-main-flow.md`](docs/orbital-lab-main-flow.md)。
 
 ## 快速运行
 
@@ -16,6 +18,13 @@ npm run dev
 ```bash
 npm run build   # 推送前必须通过
 npm start       # 生产预览
+```
+
+本地开发服务运行时执行端到端测试，请使用隔离构建，避免 `next dev` 与测试服务器同时改写 `.next`：
+
+```bash
+npm run build:e2e
+npm run test:e2e
 ```
 
 ### Vercel
@@ -39,6 +48,9 @@ src/
       product-turntable/       # 产品图 3D 转盘（真实交互 · 可验收）
       robot-arm/               # 自然语言机械臂仿真（真实交互 · 可验收）
   components/
+    experience/
+      exterior/                 # 轨道外景、入口锁定、靠近动画
+      interior/                 # 气闸、小 K、全息终端、舱内交互层
     layout/Header.tsx          # Home + 4 demos，active state
     three/                     # 共享 3D 基建（W1，业务无关）
       LightRig.tsx             # studio/rim/tech 光照预设（可选自托管 HDR）
@@ -50,9 +62,9 @@ src/
       useGlbScene.ts           # 注册表驱动 GLB 加载（W2/W3 消费）
     home/
       HeroCanvasDynamic.tsx    # dynamic import ssr:false
-      HeroCanvas.tsx           # 全屏固定 R3F Canvas + tier/fps 遥测属性
-      HeroScene.tsx            # 粒子/低多边形；相机由 CameraTimeline 接管
-      HomeExperience.tsx       # 滚动层 About / Works / Contact + data-point 锚点 + 降级
+      HeroCanvas.tsx           # 外景/靠近/气闸/舱内总编排 + tier/fps 遥测
+      HeroScene.tsx            # 太空总览场景
+      HomeExperience.tsx       # 单视口入口 + 无 WebGL 降级
     demos/
       DemoStub.tsx             # 统一 stub：标题/pitch/验收/付费 TODO
       AgentDodGateDemo.tsx     # DoD 闸门交互（无/有闸门）
@@ -74,6 +86,8 @@ src/
     robot-arm.test.ts
     hero-timeline.ts           # 首页 4 站相机键 + timeline 配置
     hero-timeline.test.ts
+    experience-flow.ts         # 主干旅程 reducer、分支与站点顺序
+    experience-flow.test.ts
     three/
       quality.ts               # 渲染分档 / 单向降档纯函数
       quality.test.ts
@@ -91,6 +105,10 @@ src/
     reel.webm                 # ≤20s formal portfolio reel
   public/demos/robot-arm/
     reel.webm                 # ≤20s formal portfolio reel
+  public/assets/interior/
+    docking-airlock.glb       # Web 优化气闸
+    guide-robot.glb           # Web 优化小 K
+    holographic-display.glb   # Web 优化全息终端
   e2e/
     dod-gate.spec.ts
     home-hero.spec.ts

@@ -43,6 +43,30 @@ export const ASSETS: readonly AssetEntry[] = [
     license: "self-made from user-provided Hunyuan generation; Blender optimized",
     source: "src/assets/models/orbital-lab-exterior-source.glb",
   },
+  {
+    id: "docking-airlock",
+    url: "/assets/interior/docking-airlock.glb",
+    budgetBytes: 3 * 1024 * 1024,
+    compression: "meshopt",
+    license: "self-made from user-provided Hunyuan generation; Blender optimized",
+    source: "src/assets/models/docking-airlock-source.glb",
+  },
+  {
+    id: "guide-robot",
+    url: "/assets/interior/guide-robot.glb",
+    budgetBytes: 3 * 1024 * 1024,
+    compression: "meshopt",
+    license: "self-made from user-provided Hunyuan generation; Blender optimized",
+    source: "src/assets/models/guide-robot-source.glb",
+  },
+  {
+    id: "holographic-display",
+    url: "/assets/interior/holographic-display.glb",
+    budgetBytes: 3 * 1024 * 1024,
+    compression: "meshopt",
+    license: "self-made from user-provided Hunyuan generation; Blender optimized",
+    source: "src/assets/models/holographic-display-source.glb",
+  },
 ];
 
 export function getAsset(id: string): AssetEntry | undefined {

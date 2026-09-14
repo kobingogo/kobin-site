@@ -1,0 +1,32 @@
+[
+  {
+    "id": "docking-airlock",
+    "file": "docking-airlock.glb",
+    "source": "docking-airlock-source.glb",
+    "ratio": 0.18,
+    "source_triangles": 499398,
+    "triangles": 89890,
+    "texture_max_edge": 1024,
+    "size_mb": 2.44
+  },
+  {
+    "id": "guide-robot",
+    "file": "guide-robot.glb",
+    "source": "guide-robot-source.glb",
+    "ratio": 0.16,
+    "source_triangles": 500551,
+    "triangles": 80088,
+    "texture_max_edge": 1024,
+    "size_mb": 1.89
+  },
+  {
+    "id": "holographic-display",
+    "file": "holographic-display.glb",
+    "source": "holographic-display-source.glb",
+    "ratio": 0.15,
+    "source_triangles": 494014,
+    "triangles": 74102,
+    "texture_max_edge": 1024,
+    "size_mb": 2.06
+  }
+]

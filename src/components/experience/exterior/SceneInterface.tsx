@@ -29,6 +29,7 @@ export function SceneInterface({
   hoveredProject,
   eclipseActive,
   onViewChange,
+  onEnterLab,
   onProjectHover,
 }: {
   view: SceneView;
@@ -36,6 +37,7 @@ export function SceneInterface({
   hoveredProject: number | null;
   eclipseActive: boolean;
   onViewChange: (view: SceneView) => void;
+  onEnterLab: () => void;
   onProjectHover: (index: number | null) => void;
 }) {
   const router = useRouter();
@@ -107,12 +109,13 @@ export function SceneInterface({
               </p>
               <button
                 type="button"
-                onClick={() => onViewChange("works")}
+                onClick={onEnterLab}
                 data-cursor-label="ENTER"
+                data-testid="enter-lab"
                 className="orbital-entry mt-5 inline-flex items-center py-2 font-mono text-[10px] tracking-[0.22em] text-cyan-200 transition hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-300 sm:mt-7 sm:text-[11px]"
               >
                 <span aria-hidden className="mr-4 h-px w-10 bg-cyan-300/70 transition-all duration-300" />
-                探索作品轨道 <span aria-hidden className="ml-3 text-cyan-300">→</span>
+                进入轨道实验室 <span aria-hidden className="ml-3 text-cyan-300">→</span>
               </button>
             </div>
           ) : null}

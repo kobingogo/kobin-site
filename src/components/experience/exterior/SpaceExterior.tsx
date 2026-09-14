@@ -24,6 +24,7 @@ export function SpaceExterior({
   activationCount,
   hoveredProject,
   eclipseActive,
+  entryActive = false,
   reducedMotion,
   onReady,
   onActivate,
@@ -35,6 +36,7 @@ export function SpaceExterior({
   activationCount: number;
   hoveredProject: number | null;
   eclipseActive: boolean;
+  entryActive?: boolean;
   reducedMotion?: boolean;
   onReady?: () => void;
   onActivate?: () => void;
@@ -85,7 +87,7 @@ export function SpaceExterior({
         onActivate={onActivate}
         reducedMotion={reducedMotion}
       />
-      <SceneCamera view={view} reducedMotion={reducedMotion} onEclipseAlign={onEclipseAlign} />
+      <SceneCamera view={view} entryActive={entryActive} reducedMotion={reducedMotion} onEclipseAlign={onEclipseAlign} />
     </>
   );
 }

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  ASSETS,
   budgetSlack,
   getAsset,
   withinBudget,
@@ -28,6 +29,19 @@ describe("three/assets registry", () => {
       assert.ok(station);
       assert.equal(station.compression, "meshopt");
       assert.equal(station.budgetBytes, budgetMb * 1024 * 1024);
+    }
+  });
+
+  it("registers the complete interior asset set", () => {
+    const ids = ASSETS.map((asset) => asset.id);
+    assert.ok(ids.includes("docking-airlock"));
+    assert.ok(ids.includes("guide-robot"));
+    assert.ok(ids.includes("holographic-display"));
+    for (const id of ["docking-airlock", "guide-robot", "holographic-display"]) {
+      const asset = getAsset(id)!;
+      assert.equal(asset.compression, "meshopt");
+      assert.ok(asset.url.startsWith("/assets/interior/"));
+      assert.ok(asset.budgetBytes <= 3 * 1024 * 1024);
     }
   });
 
